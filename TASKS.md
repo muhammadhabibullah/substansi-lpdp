@@ -85,9 +85,11 @@ direction (2026-08-17); first task is voice input (P1-1).
 ## Known follow-ups (small, non-blocking)
 
 - README screenshots are not committed yet (M6-1); capture from a real session.
-- `pnpm test` covers pure logic + prompt assembly only. The browser flow was
-  verified manually with a mock OpenAI-compatible endpoint (see progress log);
-  wiring that into CI as a Playwright job is optional future work.
+- `pnpm test` covers pure logic, prompt assembly, and the `useInterview` turn
+  lifecycle (busy guard, unmount abort, truncation-retry buffer reset). The
+  full browser flow was verified manually with a mock OpenAI-compatible
+  endpoint (see progress log); wiring that into CI as a Playwright job is
+  optional future work.
 - Dependency majors are intentionally pinned behind latest (Next 15, AI SDK 4,
   Tailwind 3) for stability; upgrading is a separate task.
 
@@ -96,6 +98,17 @@ direction (2026-08-17); first task is voice input (P1-1).
 ## Progress log
 
 <!-- Newest first. Format: YYYY-MM-DD · TASK-ID · what changed · notes for next session -->
+
+- 2026-08-17 · ad-hoc · test(interview): hook-level lifecycle coverage for
+  `hooks/use-interview.ts` (3 tests): busy guard rejects a second submit while
+  a turn is in flight, unmount aborts the in-flight `AbortController`, and
+  `onTruncationRetry` resets the live streaming buffer. The vitest include
+  pattern already matched `hooks/*.test.ts`, so no config change was needed —
+  the file opts into jsdom per-file (`// @vitest-environment jsdom`, new
+  `jsdom` devDependency) and renders the hook via `react-dom/client` +
+  `React.act` with mocked `streamComplete`/storage/moderator/notetaker.
+  Verified by temporarily removing the busy guard: the test fails as
+  expected. `pnpm test`: 278 pass. Gates: lint, typecheck, test all pass.
 
 - 2026-08-17 · ad-hoc · chore(ci): broadened the key-leak scan in
   `.github/workflows/ci.yml` to cover every BYOK key shape from the README
