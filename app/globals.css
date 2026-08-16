@@ -97,6 +97,13 @@
     display: none !important;
   }
 
+  /* Print only the app's own landmarks. Anything appended to <body> at
+     runtime (dev-tools indicator, editor preview widgets) stays out of
+     the downloaded PDF. */
+  body > :not(header):not(main):not(footer) {
+    display: none !important;
+  }
+
   .print-break-before {
     break-before: page;
   }

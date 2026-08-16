@@ -127,3 +127,8 @@ needs user direction before starting.
   missing key is a compile error), `lib/llm.ts` BYOK gateway, settings screen,
   and CI + Pages workflows.
 - 2025-08-16 · setup · Created AGENTS.md + TASKS.md agentic workflow files · Repo is otherwise empty (PLAN.md + README stub); start at M1-1.
+- 2026-08-17 · ad-hoc · Print CSS: the floating lightning button seen in local
+  PDFs is a runtime overlay injected by the dev environment (not app code;
+  verified absent from source and `out/`). Added a `@media print` rule hiding
+  any non-landmark `<body>` children so dev-tools/preview widgets never reach
+  the downloaded PDF; production static export was never affected.
