@@ -28,7 +28,9 @@ export const STORAGE_KEYS = {
   profile: `${PREFIX}:profile`,
   documents: `${PREFIX}:documents`,
   session: `${PREFIX}:session`,
+  /** Legacy single-report key; kept only so old data migrates into `reports`. */
   report: `${PREFIX}:report`,
+  reports: `${PREFIX}:reports`,
   locale: LOCALE_STORAGE_KEY,
 } as const;
 
@@ -119,6 +121,7 @@ export function migrateIfNeeded(): void {
     removeKey(STORAGE_KEYS.documents);
     removeKey(STORAGE_KEYS.session);
     removeKey(STORAGE_KEYS.report);
+    removeKey(STORAGE_KEYS.reports);
     ensureVersionStamp();
   }
 }
@@ -225,20 +228,71 @@ export function isResumable(session: InterviewSession | null): boolean {
   return session.status === 'running' || session.status === 'wrapping';
 }
 
-/* ── Report ──────────────────────────────────────────────────────────────── */
+/* ── Reports — one entry per interview attempt, newest first ─────────────── */
 
+/** How many past attempts the history keeps, guarding the localStorage quota. */
+export const MAX_REPORT_HISTORY = 20;
+
+function isStoredReport(value: unknown): value is Report {
+  if (!value || typeof value !== 'object') return false;
+  const report = value as Report;
+  return (
+    typeof report.id === 'string' &&
+    typeof report.sessionId === 'string' &&
+    Array.isArray(report.dimensions)
+  );
+}
+
+/**
+ * All saved reports, newest first. A report written under the legacy
+ * single-report key (schema before report history) is folded into the list
+ * the first time this runs.
+ */
+export function loadReports(): Report[] {
+  const raw = readJson<unknown>(STORAGE_KEYS.reports);
+  const list: Report[] = Array.isArray(raw) ? raw.filter(isStoredReport) : [];
+
+  const legacy = readJson<Report>(STORAGE_KEYS.report);
+  if (isStoredReport(legacy) && !list.some((entry) => entry.id === legacy.id)) {
+    list.unshift(legacy);
+    removeKey(STORAGE_KEYS.report);
+    list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    writeJson(STORAGE_KEYS.reports, list);
+  }
+  return list;
+}
+
+/**
+ * Insert or replace a report. One entry per attempt: a report from a session
+ * that is already in the history replaces that session's entry (regenerate).
+ */
+export function upsertReport(report: Report): void {
+  const list = loadReports();
+  const index = list.findIndex(
+    (entry) => entry.id === report.id || entry.sessionId === report.sessionId,
+  );
+  if (index >= 0) {
+    list[index] = report;
+  } else {
+    list.unshift(report);
+  }
+  writeJson(STORAGE_KEYS.reports, list.slice(0, MAX_REPORT_HISTORY));
+}
+
+export function deleteReport(id: string): void {
+  writeJson(
+    STORAGE_KEYS.reports,
+    loadReports().filter((entry) => entry.id !== id),
+  );
+}
+
+/** The most recent report — used by shortcuts like the landing page CTA. */
 export function loadReport(): Report | null {
-  const report = readJson<Report>(STORAGE_KEYS.report);
-  if (!report || typeof report !== 'object') return null;
-  if (!Array.isArray(report.dimensions)) return null;
-  return report;
+  return loadReports()[0] ?? null;
 }
 
-export function saveReport(report: Report): void {
-  writeJson(STORAGE_KEYS.report, report);
-}
-
-export function clearReport(): void {
+export function clearReports(): void {
+  removeKey(STORAGE_KEYS.reports);
   removeKey(STORAGE_KEYS.report);
 }
 

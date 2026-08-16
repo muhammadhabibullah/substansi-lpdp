@@ -11,6 +11,7 @@ import {
   MinusCircle,
   Printer,
   RotateCcw,
+  Trash2,
 } from 'lucide-react';
 
 import { Disclaimer } from '@/components/disclaimer';
@@ -33,13 +34,19 @@ import { toLlmError, type LlmError } from '@/lib/llm';
 import { generateReport, type ReportStep } from '@/lib/report';
 import { bandTone, getDimension } from '@/lib/rubric';
 import {
-  clearSession,
-  loadReport,
+  deleteReport,
+  loadReports,
   loadSession,
-  saveReport,
   saveSession,
+  upsertReport,
 } from '@/lib/storage';
-import type { PanelistId, Report, SignalCheck, SignalVerdict } from '@/lib/types';
+import type {
+  InterviewSession,
+  PanelistId,
+  Report,
+  SignalCheck,
+  SignalVerdict,
+} from '@/lib/types';
 import { cn, formatClock, formatDateTime, formatDuration } from '@/lib/utils';
 
 type State =
@@ -53,6 +60,11 @@ export function ReportScreen() {
   const { c, f, locale } = useI18n();
   const { settings, hydrated } = useSettings();
   const [state, setState] = React.useState<State>({ status: 'loading' });
+  /** Saved attempts, newest first — the report history list. */
+  const [history, setHistory] = React.useState<Report[]>([]);
+  const [selectedId, setSelectedId] = React.useState<string | null>(null);
+  /** The session still in storage, if any (enables "rebuild report"). */
+  const [activeSession, setActiveSession] = React.useState<InterviewSession | null>(null);
   const startedRef = React.useRef(false);
   const abortRef = React.useRef<AbortController | null>(null);
 
@@ -77,9 +89,18 @@ export function ReportScreen() {
         onStep: (step, index, total) =>
           setState({ status: 'generating', step, index, total }),
       });
-      saveReport(report);
+      // One history entry per attempt: re-grading the same session replaces
+      // that session's report instead of adding a duplicate.
+      upsertReport(report);
       // Mark the session finished so we do not re-grade it on every visit.
-      saveSession({ ...session, status: 'finished', finishedAt: Date.now() });
+      saveSession({
+        ...session,
+        status: 'finished',
+        finishedAt: session.finishedAt ?? Date.now(),
+      });
+      setHistory(loadReports());
+      setActiveSession(loadSession());
+      setSelectedId(report.id);
       setState({ status: 'ready', report });
     } catch (error) {
       const llmError = toLlmError(error);
@@ -88,23 +109,38 @@ export function ReportScreen() {
     }
   }, [locale, settings]);
 
-  // On mount: show a stored report, or grade the just-finished session.
+  // On mount: grade a just-finished session that has no report yet, otherwise
+  // show the newest saved report alongside the history list.
   React.useEffect(() => {
     if (!hydrated || startedRef.current) return;
     startedRef.current = true;
 
-    const stored = loadReport();
+    const reports = loadReports();
     const session = loadSession();
+    setHistory(reports);
+    setActiveSession(session);
 
-    if (
-      stored &&
-      (!session || session.id === stored.sessionId || session.status === 'finished')
-    ) {
-      setState({ status: 'ready', report: stored });
+    if (session && session.status === 'finished' && session.turns.length > 0) {
+      const existing = reports.find((entry) => entry.sessionId === session.id);
+      // A report built mid-interview is older than the session's end; rebuild
+      // it so the final transcript is what gets graded.
+      const stale =
+        existing && session.finishedAt
+          ? existing.createdAt < session.finishedAt
+          : false;
+      if (!existing || stale) {
+        void build();
+        return;
+      }
+      setSelectedId(existing.id);
+      setState({ status: 'ready', report: existing });
       return;
     }
-    if (session && session.turns.length > 0) {
-      void build();
+
+    if (reports.length > 0) {
+      const newest = reports[0]!;
+      setSelectedId(newest.id);
+      setState({ status: 'ready', report: newest });
       return;
     }
     setState({ status: 'empty' });
@@ -116,6 +152,26 @@ export function ReportScreen() {
     },
     [],
   );
+
+  const selectReport = (entry: Report) => {
+    setSelectedId(entry.id);
+    setState({ status: 'ready', report: entry });
+  };
+
+  const removeReport = (id: string) => {
+    if (!window.confirm(c.report.historyDeleteConfirm)) return;
+    deleteReport(id);
+    const remaining = loadReports();
+    setHistory(remaining);
+    if (selectedId === id) {
+      if (remaining.length > 0) {
+        selectReport(remaining[0]!);
+      } else {
+        setSelectedId(null);
+        setState({ status: 'empty' });
+      }
+    }
+  };
 
   const stepLabels: Record<ReportStep, string> = {
     scoring: c.report.stepScoring,
@@ -195,6 +251,14 @@ export function ReportScreen() {
 
   const { report } = state;
 
+  // Rebuilding is only possible while the session this report came from is
+  // still in storage (a new attempt replaces the session).
+  const canRegenerate = Boolean(
+    activeSession &&
+      activeSession.turns.length > 0 &&
+      activeSession.id === report.sessionId,
+  );
+
   return (
     <div className="container max-w-4xl py-10">
       {/* Actions — hidden when printing */}
@@ -214,16 +278,80 @@ export function ReportScreen() {
           </Button>
           <Button
             variant="ghost"
-            onClick={() => {
-              clearSession();
-              void build();
-            }}
-            title={c.report.regenerate}
+            onClick={() => void build()}
+            disabled={!canRegenerate}
+            title={
+              canRegenerate ? c.report.regenerate : c.report.regenerateUnavailable
+            }
+            aria-label={c.report.regenerate}
           >
             <RotateCcw aria-hidden />
           </Button>
         </div>
       </div>
+
+      {/* Report history — one entry per interview attempt (hidden in print) */}
+      {history.length > 0 ? (
+        <Card className="no-print mb-6 print-avoid-break">
+          <CardHeader>
+            <CardTitle className="text-base">{c.report.historyTitle}</CardTitle>
+            <CardDescription>
+              {f(c.report.historySubtitle, { count: history.length })}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {history.map((entry) => {
+              const selected = entry.id === selectedId;
+              return (
+                <div
+                  key={entry.id}
+                  className={cn(
+                    'flex items-center gap-2 rounded-lg border border-border px-3 py-2',
+                    selected && 'border-primary bg-primary/5',
+                  )}
+                >
+                  <button
+                    type="button"
+                    onClick={() => selectReport(entry)}
+                    className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                    aria-label={`${c.report.historyView} — ${formatDateTime(entry.createdAt, locale)}`}
+                    aria-current={selected ? 'true' : undefined}
+                  >
+                    <span className="w-10 shrink-0 text-2xl font-bold tabular-nums">
+                      {entry.totalScore}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-medium">
+                        {formatDateTime(entry.createdAt, locale)}
+                      </span>
+                      <span className="block truncate text-xs text-muted-foreground">
+                        {c.bands[entry.band].label} ·{' '}
+                        {formatDuration(entry.durationMs, locale)} ·{' '}
+                        {f(c.report.historyAnswers, { count: entry.answerCount })}
+                      </span>
+                    </span>
+                  </button>
+                  {entry.id === history[0]?.id ? (
+                    <Badge variant="outline" className="shrink-0">
+                      {c.report.historyLatest}
+                    </Badge>
+                  ) : null}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="shrink-0 text-muted-foreground hover:text-destructive"
+                    onClick={() => removeReport(entry.id)}
+                    aria-label={c.report.historyDelete}
+                    title={c.report.historyDelete}
+                  >
+                    <Trash2 aria-hidden className="size-4" />
+                  </Button>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+      ) : null}
 
       {/* Disclaimer — hard constraint #6 */}
       <div className="mb-6">

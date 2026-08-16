@@ -77,7 +77,7 @@ direction (2026-08-17); first task is voice input (P1-1).
 | P1-1 | Voice input mode for the interview: browser Speech Recognition (STT), transcript shown read-only (non-editable) and submitted as-is; typing stays as the fallback. Rationale: typing answers inside a 60-minute interview is not time-efficient. | done |
 | P1-2 | Voice output (TTS) for panelist turns | parked |
 | P1-3 | Cloudflare Worker free-tier proxy (shared key + per-IP rate limiting) | parked |
-| P1-4 | Interview history | parked |
+| P1-4 | Report history: multiple reports (one per attempt) with a viewable/deletable history list on the report page | done |
 | P1-5 | Question bank enriched from awardee experiences | parked |
 
 ## Known follow-ups (small, non-blocking)
@@ -95,6 +95,14 @@ direction (2026-08-17); first task is voice input (P1-1).
 
 <!-- Newest first. Format: YYYY-MM-DD · TASK-ID · what changed · notes for next session -->
 
+- 2026-08-17 · P1-4 · feat(report): report history for multiple attempts
+  (user feedback #1). Reports now live in a `substansi-lpdp:reports` list
+  (newest first, capped at 20); the legacy single-report key migrates into it
+  automatically. `upsertReport` keeps one entry per session, so "rebuild
+  report" replaces instead of duplicating. The report page gained a history
+  card (score, band, duration, answers; select to view, delete with confirm),
+  and rebuild is only offered while that report's session is still stored.
+  Added `lib/storage.test.ts` (8 tests). Gates: lint, typecheck, test, build.
 - 2026-08-17 · P1-1 · feat(voice): pause-based sentence punctuation. The
   speech engine never emits punctuation, so multi-sentence answers now get
   sentence breaks from timing: when speech resumes ≥ `SENTENCE_GAP_MS` (1.5 s)

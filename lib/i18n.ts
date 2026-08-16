@@ -446,6 +446,16 @@ const id = {
     stepNextSteps: 'Merumuskan langkah perbaikan',
     generateFailed: 'Gagal menyusun laporan',
     regenerate: 'Susun ulang laporan',
+    regenerateUnavailable:
+      'Hanya sesi wawancara terakhir yang masih tersimpan yang bisa disusun ulang.',
+    historyTitle: 'Riwayat laporan',
+    historySubtitle: '{count} sesi wawancara tersimpan di browser ini.',
+    historyAnswers: '{count} jawaban',
+    historyLatest: 'Terbaru',
+    historyView: 'Lihat laporan',
+    historyDelete: 'Hapus laporan',
+    historyDeleteConfirm:
+      'Hapus laporan ini dari riwayat? Tindakan ini tidak bisa dibatalkan.',
     noReportTitle: 'Belum ada laporan',
     noReportBody: 'Selesaikan satu sesi wawancara untuk mendapatkan laporan penilaian.',
     noReportCta: 'Mulai persiapan',
@@ -1065,6 +1075,16 @@ const en: Copy = {
     stepNextSteps: 'Drafting improvement steps',
     generateFailed: 'Could not build the report',
     regenerate: 'Rebuild report',
+    regenerateUnavailable:
+      'Only the last interview session still saved in this browser can be rebuilt.',
+    historyTitle: 'Report history',
+    historySubtitle: '{count} interview sessions saved in this browser.',
+    historyAnswers: '{count} answers',
+    historyLatest: 'Latest',
+    historyView: 'View report',
+    historyDelete: 'Delete report',
+    historyDeleteConfirm:
+      'Delete this report from the history? This cannot be undone.',
     noReportTitle: 'No report yet',
     noReportBody: 'Complete an interview session to get an assessment report.',
     noReportCta: 'Start setup',
