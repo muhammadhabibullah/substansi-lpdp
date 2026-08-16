@@ -1,0 +1,39 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# next.js
+.next/
+out/
+next-env.d.ts
+
+# production
+build/
+dist/
+
+# misc
+.DS_Store
+*.pem
+*.tsbuildinfo
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# env files — this project is BYOK-only and must never ship keys (AGENTS.md #2)
+.env
+.env.*
+!.env.example
+
+# editors
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# test/coverage
+coverage/
+
+# generated build assets — recreated by `pnpm prepare:assets`
+public/pdf.worker.min.mjs
