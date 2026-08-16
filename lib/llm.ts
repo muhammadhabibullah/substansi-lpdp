@@ -222,8 +222,43 @@ export function assertConfigured(settings: LlmSettings): ResolvedSettings {
 }
 
 /**
+ * Newer OpenAI models (the `gpt-5*`, `o1*`, `o3*`, `o4*` reasoning families)
+ * reject the legacy `max_tokens` chat-completions field and require
+ * `max_completion_tokens` instead. The AI SDK's OpenAI-compatible provider
+ * always sends `max_tokens` with no override, and which models need the new
+ * name changes over time — so instead of hardcoding a model list, this
+ * recognizes the specific error OpenAI returns and retries once with the
+ * parameter renamed. Other providers (Groq, OpenRouter, Ollama, LM Studio)
+ * never trigger this and pay no extra cost.
+ */
+const MAX_TOKENS_ERROR_PATTERN =
+  /unsupported parameter.{0,40}'max_tokens'.{0,80}max_completion_tokens/i;
+
+/** Exported for unit testing; also used internally by `guardedFetch`. */
+export function isMaxTokensUnsupportedError(message: string): boolean {
+  return MAX_TOKENS_ERROR_PATTERN.test(message);
+}
+
+/**
+ * Rewrite a JSON request body's `max_tokens` key to `max_completion_tokens`.
+ * Exported for unit testing; also used internally by `guardedFetch`.
+ */
+export function renameMaxTokensField(body: string): string | null {
+  try {
+    const parsed = JSON.parse(body) as Record<string, unknown>;
+    if (!('max_tokens' in parsed)) return null;
+    const { max_tokens: maxTokens, ...rest } = parsed;
+    return JSON.stringify({ ...rest, max_completion_tokens: maxTokens });
+  } catch {
+    return null;
+  }
+}
+
+/**
  * A `fetch` wrapper that strips the Authorization header if the request ever
- * targets an origin other than the configured base URL (e.g. after a redirect).
+ * targets an origin other than the configured base URL (e.g. after a redirect),
+ * and transparently retries with `max_completion_tokens` when the endpoint
+ * rejects `max_tokens` (see `isMaxTokensUnsupportedError`).
  */
 function guardedFetch(baseUrl: string): typeof fetch {
   return async (input, init) => {
@@ -234,14 +269,33 @@ function guardedFetch(baseUrl: string): typeof fetch {
           ? input.toString()
           : input.url;
 
-    if (!isSameOriginAsBase(url, baseUrl)) {
-      const headers = new Headers(init?.headers);
+    const crossOrigin = !isSameOriginAsBase(url, baseUrl);
+    const headers = new Headers(init?.headers);
+    if (crossOrigin) {
       headers.delete('Authorization');
       headers.delete('api-key');
-      return fetch(input, { ...init, headers, redirect: 'error' });
     }
     // Never auto-follow a cross-origin redirect while credentials are attached.
-    return fetch(input, { ...init, redirect: 'error' });
+    const requestInit: RequestInit = { ...init, headers, redirect: 'error' };
+
+    const response = await fetch(input, requestInit);
+    if (response.ok || typeof init?.body !== 'string') return response;
+
+    // Peek at the error body without consuming the caller's response stream.
+    const probe = response.clone();
+    let message = '';
+    try {
+      message = await probe.text();
+    } catch {
+      return response;
+    }
+
+    if (!isMaxTokensUnsupportedError(message)) return response;
+
+    const patched = renameMaxTokensField(init.body);
+    if (!patched) return response;
+
+    return fetch(input, { ...requestInit, body: patched });
   };
 }
 

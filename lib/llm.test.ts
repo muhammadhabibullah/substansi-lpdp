@@ -1,15 +1,19 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   assertConfigured,
+  complete,
   extractJson,
   findPreset,
+  isMaxTokensUnsupportedError,
   isSameOriginAsBase,
   LlmError,
   normalizeBaseUrl,
   parseBaseUrl,
   PROVIDER_PRESETS,
+  renameMaxTokensField,
   resolveSettings,
+  streamComplete,
   toLlmError,
 } from './llm';
 import type { LlmSettings } from './types';
@@ -236,5 +240,204 @@ describe('provider presets (M6-3)', () => {
 
   it('returns undefined for an unknown preset id', () => {
     expect(findPreset('custom')).toBeUndefined();
+  });
+});
+
+describe('isMaxTokensUnsupportedError', () => {
+  it('recognises the real OpenAI error message', () => {
+    expect(
+      isMaxTokensUnsupportedError(
+        "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.",
+      ),
+    ).toBe(true);
+  });
+
+  it('recognises the message wrapped in an OpenAI error envelope', () => {
+    const body = JSON.stringify({
+      error: {
+        message:
+          "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.",
+        type: 'invalid_request_error',
+        param: 'max_tokens',
+        code: 'unsupported_parameter',
+      },
+    });
+    expect(isMaxTokensUnsupportedError(body)).toBe(true);
+  });
+
+  it('is case-insensitive', () => {
+    expect(
+      isMaxTokensUnsupportedError(
+        "UNSUPPORTED PARAMETER: 'MAX_TOKENS' IS NOT SUPPORTED. USE 'MAX_COMPLETION_TOKENS' INSTEAD.",
+      ),
+    ).toBe(true);
+  });
+
+  it('does not match unrelated errors', () => {
+    expect(isMaxTokensUnsupportedError('Invalid API key provided')).toBe(false);
+    expect(isMaxTokensUnsupportedError('Rate limit exceeded')).toBe(false);
+    expect(isMaxTokensUnsupportedError('')).toBe(false);
+  });
+
+  it('does not match a message that only mentions one of the two names', () => {
+    expect(isMaxTokensUnsupportedError("Unsupported parameter: 'max_tokens'")).toBe(false);
+  });
+});
+
+describe('renameMaxTokensField', () => {
+  it('renames max_tokens to max_completion_tokens', () => {
+    const patched = renameMaxTokensField(
+      JSON.stringify({ model: 'gpt-5-mini', max_tokens: 700, messages: [] }),
+    );
+    expect(JSON.parse(patched!)).toEqual({
+      model: 'gpt-5-mini',
+      messages: [],
+      max_completion_tokens: 700,
+    });
+  });
+
+  it('preserves every other field untouched', () => {
+    const patched = renameMaxTokensField(
+      JSON.stringify({ model: 'x', temperature: 0.7, stream: true, max_tokens: 16 }),
+    );
+    const parsed = JSON.parse(patched!);
+    expect(parsed.temperature).toBe(0.7);
+    expect(parsed.stream).toBe(true);
+    expect(parsed.max_tokens).toBeUndefined();
+  });
+
+  it('returns null when there is no max_tokens field', () => {
+    expect(renameMaxTokensField(JSON.stringify({ model: 'x' }))).toBeNull();
+  });
+
+  it('returns null for unparseable input', () => {
+    expect(renameMaxTokensField('not json')).toBeNull();
+  });
+});
+
+describe('complete() self-heals from the max_tokens/max_completion_tokens mismatch', () => {
+  const gptFiveSettings: LlmSettings = { ...settings, model: 'gpt-5-mini' };
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('retries once with max_completion_tokens and returns the successful reply', async () => {
+    let callCount = 0;
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      callCount += 1;
+      const body = JSON.parse(String(init?.body ?? '{}'));
+
+      if (callCount === 1) {
+        // First attempt: the SDK always sends the legacy field name.
+        expect(body.max_tokens).toBeDefined();
+        expect(body.max_completion_tokens).toBeUndefined();
+        return new Response(
+          JSON.stringify({
+            error: {
+              message:
+                "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.",
+              type: 'invalid_request_error',
+              param: 'max_tokens',
+              code: 'unsupported_parameter',
+            },
+          }),
+          { status: 400, headers: { 'content-type': 'application/json' } },
+        );
+      }
+
+      // Retry: the field must have been renamed, with the same value.
+      expect(body.max_completion_tokens).toBe(16);
+      expect(body.max_tokens).toBeUndefined();
+      return new Response(
+        JSON.stringify({
+          id: 'chatcmpl-1',
+          object: 'chat.completion',
+          created: 0,
+          model: 'gpt-5-mini',
+          choices: [
+            { index: 0, message: { role: 'assistant', content: 'OK' }, finish_reason: 'stop' },
+          ],
+        }),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      );
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const reply = await complete({
+      settings: gptFiveSettings,
+      messages: [{ role: 'user', content: 'ping' }],
+      maxTokens: 16,
+    });
+
+    expect(reply).toBe('OK');
+    expect(callCount).toBe(2);
+  });
+
+  it('does not retry a plain 400 that is unrelated to max_tokens', async () => {
+    let callCount = 0;
+    const fetchMock = vi.fn(async () => {
+      callCount += 1;
+      return new Response(
+        JSON.stringify({ error: { message: 'Invalid API key provided', type: 'invalid_request_error' } }),
+        { status: 401, headers: { 'content-type': 'application/json' } },
+      );
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(
+      complete({
+        settings: gptFiveSettings,
+        messages: [{ role: 'user', content: 'ping' }],
+        maxTokens: 16,
+      }),
+    ).rejects.toMatchObject({ kind: 'auth' });
+
+    // No retry: a single request should have been made.
+    expect(callCount).toBe(1);
+  });
+
+  it('self-heals the same way for streaming panelist turns', async () => {
+    let callCount = 0;
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      callCount += 1;
+      const body = JSON.parse(String(init?.body ?? '{}'));
+
+      if (callCount === 1) {
+        expect(body.max_tokens).toBeDefined();
+        return new Response(
+          JSON.stringify({
+            error: {
+              message:
+                "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.",
+            },
+          }),
+          { status: 400, headers: { 'content-type': 'application/json' } },
+        );
+      }
+
+      expect(body.max_completion_tokens).toBe(700);
+      const sse = [
+        `data: ${JSON.stringify({ id: '1', object: 'chat.completion.chunk', created: 0, model: 'gpt-5-mini', choices: [{ index: 0, delta: { content: 'Halo kandidat.' }, finish_reason: null }] })}\n\n`,
+        `data: ${JSON.stringify({ id: '1', object: 'chat.completion.chunk', created: 0, model: 'gpt-5-mini', choices: [{ index: 0, delta: {}, finish_reason: 'stop' }] })}\n\n`,
+        'data: [DONE]\n\n',
+      ].join('');
+      return new Response(sse, {
+        status: 200,
+        headers: { 'content-type': 'text/event-stream' },
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const deltas: string[] = [];
+    const text = await streamComplete({
+      settings: gptFiveSettings,
+      messages: [{ role: 'user', content: 'ping' }],
+      maxTokens: 700,
+      onDelta: (delta) => deltas.push(delta),
+    });
+
+    expect(text).toBe('Halo kandidat.');
+    expect(callCount).toBe(2);
   });
 });
