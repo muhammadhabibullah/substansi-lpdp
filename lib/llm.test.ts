@@ -6,6 +6,7 @@ import {
   dropTemperatureField,
   extractJson,
   findPreset,
+  guardedFetch,
   isMaxTokensUnsupportedError,
   isReasoningOnlyModel,
   isSameOriginAsBase,
@@ -94,6 +95,95 @@ describe('isSameOriginAsBase (key-safety rule #1)', () => {
   it('returns false when the base URL is unusable', () => {
     expect(isSameOriginAsBase('https://api.openai.com/v1', '')).toBe(false);
     expect(isSameOriginAsBase('https://api.openai.com/v1', 'garbage')).toBe(false);
+  });
+});
+
+describe('guardedFetch privacy guard (composes isSameOriginAsBase)', () => {
+  const baseUrl = 'https://api.openai.com/v1';
+  const credentialHeaders = {
+    Authorization: 'Bearer sk-secret',
+    'api-key': 'sk-secret',
+    'X-Custom': 'keep-me',
+  };
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  /** Captures the URL and RequestInit handed to the real fetch call. */
+  const captureFetch = () => {
+    const captured: { url?: string; init?: RequestInit } = {};
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      captured.url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
+      captured.init = init;
+      return new Response('{"ok":true}', {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    });
+    return { fetchMock, captured };
+  };
+
+  it('preserves Authorization and api-key on a same-origin request', async () => {
+    const { fetchMock, captured } = captureFetch();
+    vi.stubGlobal('fetch', fetchMock);
+
+    await guardedFetch(baseUrl)(`${baseUrl}/chat/completions`, {
+      headers: credentialHeaders,
+    });
+
+    const headers = new Headers(captured.init?.headers);
+    expect(headers.get('Authorization')).toBe('Bearer sk-secret');
+    expect(headers.get('api-key')).toBe('sk-secret');
+    // Non-credential headers are untouched.
+    expect(headers.get('X-Custom')).toBe('keep-me');
+  });
+
+  it('strips Authorization and api-key on a cross-origin request', async () => {
+    const { fetchMock, captured } = captureFetch();
+    vi.stubGlobal('fetch', fetchMock);
+
+    await guardedFetch(baseUrl)('https://evil.example.com/v1/chat/completions', {
+      headers: credentialHeaders,
+    });
+
+    const headers = new Headers(captured.init?.headers);
+    expect(headers.get('Authorization')).toBeNull();
+    expect(headers.get('api-key')).toBeNull();
+    // Stripping is surgical: everything else survives.
+    expect(headers.get('X-Custom')).toBe('keep-me');
+  });
+
+  it('forces redirect: "error" so a cross-origin redirect never carries the key', async () => {
+    const { fetchMock, captured } = captureFetch();
+    vi.stubGlobal('fetch', fetchMock);
+
+    await guardedFetch(baseUrl)(`${baseUrl}/chat/completions`, {
+      headers: credentialHeaders,
+      redirect: 'follow', // a caller preference must be overridden
+    });
+
+    expect(captured.init?.redirect).toBe('error');
+  });
+
+  it('treats a relative-path request as same-origin against the base', async () => {
+    const { fetchMock, captured } = captureFetch();
+    vi.stubGlobal('fetch', fetchMock);
+
+    // new URL('/chat/completions', baseUrl) resolves onto the base origin.
+    await guardedFetch(baseUrl)('/chat/completions', {
+      headers: credentialHeaders,
+    });
+
+    const headers = new Headers(captured.init?.headers);
+    expect(headers.get('Authorization')).toBe('Bearer sk-secret');
+    expect(headers.get('api-key')).toBe('sk-secret');
+    expect(captured.url).toBe('/chat/completions');
   });
 });
 

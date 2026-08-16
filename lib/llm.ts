@@ -423,9 +423,9 @@ async function fetchWithTimeout(
  * targets an origin other than the configured base URL (e.g. after a redirect),
  * proactively sanitizes the body for known-picky model families, and
  * transparently retries with a patched body when the endpoint rejects a
- * parameter per `REQUEST_QUIRK_FIXES`.
+ * parameter per `REQUEST_QUIRK_FIXES`. Exported for unit testing.
  */
-function guardedFetch(baseUrl: string): typeof fetch {
+export function guardedFetch(baseUrl: string): typeof fetch {
   return async (input, init) => {
     const url =
       typeof input === 'string'

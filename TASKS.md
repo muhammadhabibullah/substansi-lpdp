@@ -227,3 +227,9 @@ direction (2026-08-17); first task is voice input (P1-1).
   resets the live streaming buffer in `use-interview`, and surfaces the
   existing "Coba lagi" recovery card if the retry is still truncated. Added 3
   tests to `lib/llm.test.ts`.
+- 2026-08-17 · ad-hoc · test(llm): added 4 `guardedFetch` privacy tests to
+  `lib/llm.test.ts` (same-origin credentials preserved, cross-origin
+  `Authorization`/`api-key` stripped, `redirect: 'error'` forced, relative-path
+  URL treated as same-origin). `guardedFetch` is now exported for unit testing,
+  matching the existing pattern for internal helpers. Verified by temporarily
+  disabling the header-stripping: the cross-origin test fails as expected.
