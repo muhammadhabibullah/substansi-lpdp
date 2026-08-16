@@ -6,11 +6,15 @@ import { useRouter } from 'next/navigation';
 import {
   AlertTriangle,
   Clock,
+  Keyboard,
   Loader2,
+  Mic,
+  MicOff,
   RotateCcw,
   Send,
   SkipForward,
   Square,
+  Trash2,
   X,
 } from 'lucide-react';
 
@@ -24,11 +28,13 @@ import { Progress } from '@/components/ui/progress';
 import { Textarea } from '@/components/ui/textarea';
 import { useDocuments, useProfile, useSettings } from '@/hooks/use-app-state';
 import { useInterview, type InterviewError } from '@/hooks/use-interview';
+import { useVoiceInput, type UseVoiceInput } from '@/hooks/use-voice-input';
 import { missingRequiredDocs } from '@/lib/documents';
 import type { LlmError } from '@/lib/llm';
 import { PHASES, phaseIndex, progressPercent } from '@/lib/panel/phases';
 import type { PanelistId, TranscriptTurn } from '@/lib/types';
 import { cn, formatClock } from '@/lib/utils';
+import { combineTranscript, recognitionLang } from '@/lib/voice';
 
 export function InterviewScreen() {
   const { c, f } = useI18n();
@@ -46,10 +52,17 @@ export function InterviewScreen() {
 
   const [draft, setDraft] = React.useState('');
   const [confirmEnd, setConfirmEnd] = React.useState(false);
+  const [inputMode, setInputMode] = React.useState<'text' | 'voice'>('text');
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const inputRef = React.useRef<HTMLTextAreaElement>(null);
 
   const { session, busy, streaming, error, warning } = interview;
+
+  // Voice input follows the session language (PLAN §1 language behavior).
+  const voice = useVoiceInput({ lang: recognitionLang(session?.lang ?? 'id') });
+
+  const composerBusy =
+    busy || interview.preparingDocs || session?.status === 'finished';
   const hydrated = settingsReady && profileReady && docsReady;
 
   const setupIncomplete =
@@ -89,6 +102,23 @@ export function InterviewScreen() {
     interview.submitAnswer(text);
     inputRef.current?.focus();
   };
+
+  /** Submit the spoken answer verbatim — the transcript is non-editable. */
+  const submitVoice = () => {
+    if (busy) return;
+    const text = voice.finish();
+    if (!text) return;
+    interview.submitAnswer(text);
+  };
+
+  // Never keep the microphone open while the panel is speaking/working.
+  const voiceListening = voice.listening;
+  const voiceStop = voice.stop;
+  React.useEffect(() => {
+    if ((busy || interview.preparingDocs) && voiceListening) {
+      voiceStop();
+    }
+  }, [busy, interview.preparingDocs, voiceListening, voiceStop]);
 
   /* ── Guard: setup incomplete ───────────────────────────────────────────── */
 
@@ -262,29 +292,67 @@ export function InterviewScreen() {
         </Alert>
       ) : null}
 
-      {/* Answer composer */}
-      <div className="mt-4">
-        <Textarea
-          ref={inputRef}
-          value={draft}
-          rows={3}
-          disabled={busy || interview.preparingDocs || session.status === 'finished'}
-          placeholder={
-            busy || interview.preparingDocs
-              ? c.interview.inputPlaceholderWaiting
-              : c.interview.inputPlaceholder
-          }
-          onChange={(event) => setDraft(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' && !event.shiftKey) {
-              event.preventDefault();
-              submit();
+      {/* Answer composer — typing and voice input modes (P1-1) */}
+      <div className="mt-4 space-y-2">
+        {voice.supported ? (
+          <div role="group" aria-label={c.interview.title} className="flex items-center gap-1">
+            <Button
+              variant={inputMode === 'text' ? 'secondary' : 'outline'}
+              size="sm"
+              aria-pressed={inputMode === 'text'}
+              onClick={() => {
+                voice.stop();
+                setInputMode('text');
+                inputRef.current?.focus();
+              }}
+            >
+              <Keyboard aria-hidden />
+              {c.interview.inputModeText}
+            </Button>
+            <Button
+              variant={inputMode === 'voice' ? 'secondary' : 'outline'}
+              size="sm"
+              aria-pressed={inputMode === 'voice'}
+              onClick={() => setInputMode('voice')}
+            >
+              <Mic aria-hidden />
+              {c.interview.inputModeVoice}
+            </Button>
+          </div>
+        ) : null}
+
+        {inputMode === 'voice' && voice.supported ? (
+          <VoiceComposer voice={voice} disabled={composerBusy} />
+        ) : (
+          <Textarea
+            ref={inputRef}
+            value={draft}
+            rows={3}
+            disabled={composerBusy}
+            placeholder={
+              busy || interview.preparingDocs
+                ? c.interview.inputPlaceholderWaiting
+                : c.interview.inputPlaceholder
             }
-          }}
-          aria-label={c.interview.inputPlaceholder}
-        />
-        <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-          <p className="text-xs text-muted-foreground">{c.interview.sendHint}</p>
+            onChange={(event) => setDraft(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                submit();
+              }
+            }}
+            aria-label={c.interview.inputPlaceholder}
+          />
+        )}
+
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs text-muted-foreground">
+            {inputMode === 'voice'
+              ? voice.supported
+                ? c.interview.voiceNonEditableNote
+                : c.interview.voiceUnsupported
+              : c.interview.sendHint}
+          </p>
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground">
               {f(c.interview.answersCount, {
@@ -292,8 +360,13 @@ export function InterviewScreen() {
               })}
             </span>
             <Button
-              onClick={submit}
-              disabled={busy || interview.preparingDocs || draft.trim().length === 0}
+              onClick={inputMode === 'voice' && voice.supported ? submitVoice : submit}
+              disabled={
+                composerBusy ||
+                (inputMode === 'voice' && voice.supported
+                  ? combineTranscript(voice.transcript, voice.interim).length === 0
+                  : draft.trim().length === 0)
+              }
             >
               <Send aria-hidden />
               {c.interview.send}
@@ -336,6 +409,93 @@ export function InterviewScreen() {
           </Card>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+/* ── Voice composer (P1-1) ──────────────────────────────────────────────── */
+
+interface VoiceComposerProps {
+  voice: UseVoiceInput;
+  /** True while the panel is busy or the session has ended. */
+  disabled: boolean;
+}
+
+/**
+ * Voice answer panel. The transcript area is deliberately read-only: spoken
+ * answers go to the panel verbatim, mirroring a real interview (P1-1).
+ */
+function VoiceComposer({ voice, disabled }: VoiceComposerProps) {
+  const { c } = useI18n();
+  const visibleText = combineTranscript(voice.transcript, voice.interim);
+
+  const errorText =
+    voice.error === 'denied'
+      ? c.interview.voiceDenied
+      : voice.error === 'network'
+        ? c.interview.voiceNetwork
+        : voice.error
+          ? c.interview.voiceOtherError
+          : null;
+
+  return (
+    <div className="space-y-2">
+      {errorText ? (
+        <Alert variant="destructive">
+          <AlertTriangle aria-hidden />
+          <AlertDescription>{errorText}</AlertDescription>
+        </Alert>
+      ) : null}
+
+      <Textarea
+        readOnly
+        value={visibleText}
+        rows={3}
+        placeholder={c.interview.voicePlaceholder}
+        aria-label={c.interview.voiceTranscriptLabel}
+        className="bg-muted/40"
+      />
+
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p
+          className={cn(
+            'flex items-center gap-1.5 text-xs',
+            voice.listening ? 'text-foreground' : 'text-muted-foreground',
+          )}
+          aria-live="polite"
+        >
+          {voice.listening ? (
+            <>
+              <Mic aria-hidden className="size-3.5 animate-pulse text-destructive" />
+              {c.interview.voiceListening}
+            </>
+          ) : (
+            c.interview.voiceIdleHint
+          )}
+        </p>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={voice.clear}
+            disabled={disabled || visibleText.length === 0}
+          >
+            <Trash2 aria-hidden />
+            {c.interview.voiceDiscard}
+          </Button>
+          <Button
+            variant={voice.listening ? 'destructive' : 'secondary'}
+            size="sm"
+            onClick={() => (voice.listening ? voice.stop() : voice.start())}
+            disabled={disabled}
+          >
+            {voice.listening ? <MicOff aria-hidden /> : <Mic aria-hidden />}
+            {voice.listening ? c.interview.voiceStop : c.interview.voiceStart}
+          </Button>
+        </div>
+      </div>
+
+      <p className="text-xs text-muted-foreground">{c.interview.voicePrivacyNote}</p>
     </div>
   );
 }

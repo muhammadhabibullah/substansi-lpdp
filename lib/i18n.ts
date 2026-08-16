@@ -277,6 +277,26 @@ const id = {
     inputPlaceholderWaiting: 'Tunggu panel selesai berbicara…',
     send: 'Kirim',
     sendHint: 'Enter untuk kirim · Shift+Enter untuk baris baru',
+    inputModeText: 'Ketik',
+    inputModeVoice: 'Suara',
+    voiceStart: 'Mulai berbicara',
+    voiceStop: 'Berhenti mendengarkan',
+    voiceListening: 'Mendengarkan… silakan bicara.',
+    voiceIdleHint: 'Tekan mikrofon lalu bicara. Transkrip tidak dapat diedit.',
+    voicePlaceholder: 'Jawaban lisan Anda akan muncul di sini.',
+    voiceTranscriptLabel: 'Transkrip jawaban suara',
+    voiceDiscard: 'Hapus transkrip',
+    voiceNonEditableNote:
+      'Jawaban suara ditranskripsikan otomatis dan dikirim apa adanya — tidak dapat diedit.',
+    voicePrivacyNote:
+      'Transkripsi diproses oleh layanan bawaan browser Anda; hanya teks hasilnya yang dipakai aplikasi ini.',
+    voiceDenied:
+      'Akses mikrofon ditolak. Izinkan mikrofon untuk situs ini di browser, atau gunakan mode ketik.',
+    voiceNetwork:
+      'Layanan transkripsi browser gagal karena masalah jaringan. Coba lagi atau gunakan mode ketik.',
+    voiceOtherError: 'Input suara terhenti. Coba lagi atau gunakan mode ketik.',
+    voiceUnsupported:
+      'Browser ini tidak mendukung input suara. Gunakan mode ketik.',
     thinking: 'sedang menyusun pertanyaan…',
     typing: 'sedang berbicara…',
     endEarly: 'Akhiri lebih awal',
@@ -589,6 +609,10 @@ const id = {
         body: 'Prompt dan jawaban Anda dikirim ke endpoint LLM yang Anda pilih dan tunduk pada kebijakan privasi penyedia tersebut. Jika Anda ingin sepenuhnya offline, gunakan model lokal seperti Ollama atau LM Studio.',
       },
       {
+        title: 'Mode suara memakai layanan browser',
+        body: 'Jika Anda menjawab dengan mode suara, transkripsi diproses oleh layanan pengenal ucapan bawaan browser Anda (misalnya layanan Google pada Chrome). Aplikasi ini hanya menerima teks hasilnya; audio tidak pernah dikirim ke endpoint LLM maupun ke proyek ini. Jika Anda ingin sepenuhnya offline, gunakan mode ketik.',
+      },
+      {
         title: 'Menghapus data Anda',
         body: 'Tombol "Hapus semua data aplikasi" di halaman Pengaturan menghapus profil, dokumen, transkrip, laporan, dan kunci API dari browser ini. Membersihkan data situs di peramban juga menghapus semuanya.',
       },
@@ -876,6 +900,25 @@ const en: Copy = {
     inputPlaceholderWaiting: 'Wait for the panel to finish speaking…',
     send: 'Send',
     sendHint: 'Enter to send · Shift+Enter for a new line',
+    inputModeText: 'Type',
+    inputModeVoice: 'Voice',
+    voiceStart: 'Start speaking',
+    voiceStop: 'Stop listening',
+    voiceListening: 'Listening… go ahead.',
+    voiceIdleHint: 'Press the microphone and speak. The transcript cannot be edited.',
+    voicePlaceholder: 'Your spoken answer will appear here.',
+    voiceTranscriptLabel: 'Voice answer transcript',
+    voiceDiscard: 'Discard transcript',
+    voiceNonEditableNote:
+      'Voice answers are transcribed automatically and sent as-is — they cannot be edited.',
+    voicePrivacyNote:
+      'Transcription is handled by your browser’s built-in service; this app only uses the resulting text.',
+    voiceDenied:
+      'Microphone access was denied. Allow the microphone for this site in your browser, or use typing mode.',
+    voiceNetwork:
+      'The browser’s transcription service failed due to a network problem. Try again or use typing mode.',
+    voiceOtherError: 'Voice input stopped. Try again or use typing mode.',
+    voiceUnsupported: 'This browser does not support voice input. Use typing mode.',
     thinking: 'is composing a question…',
     typing: 'is speaking…',
     endEarly: 'End early',
@@ -1182,6 +1225,10 @@ const en: Copy = {
       {
         title: 'Third-party data: your LLM provider',
         body: 'Your prompts and answers are sent to the LLM endpoint you select and are subject to that provider’s privacy policy. If you want to stay fully offline, use a local model such as Ollama or LM Studio.',
+      },
+      {
+        title: 'Voice mode uses your browser’s service',
+        body: 'When you answer in voice mode, transcription is handled by your browser’s built-in speech recognition service (for example Google’s service in Chrome). This app only receives the resulting text; audio is never sent to the LLM endpoint or to this project. Use typing mode if you want to stay fully offline.',
       },
       {
         title: 'Deleting your data',

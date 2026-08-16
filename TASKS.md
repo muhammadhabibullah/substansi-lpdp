@@ -5,8 +5,8 @@ See `AGENTS.md` for the working protocol.
 
 **Statuses:** `todo` · `in_progress` · `done` · `blocked(<reason>)`
 
-**Current milestone:** v1 complete (M1–M6 done) — next work is Post-v1, which
-needs user direction before starting.
+**Current milestone:** v1 complete (M1–M6 done) — Post-v1 started with user
+direction (2026-08-17); first task is voice input (P1-1).
 
 ---
 
@@ -70,12 +70,15 @@ needs user direction before starting.
 | M6-3 | Provider presets in Settings (OpenAI / OpenRouter / Groq / Ollama / LM Studio) | done |
 | M6-4 | Example/dummy documents for trying the app without real materials | done |
 
-## Post-v1 (parked — do not start without user direction)
+## Post-v1 (user-directed — started 2026-08-17)
 
-- Cloudflare Worker free-tier proxy (shared key + per-IP rate limiting)
-- Voice mode (STT/TTS)
-- Interview history
-- Question bank enriched from awardee experiences
+| ID | Task | Status |
+|---|---|---|
+| P1-1 | Voice input mode for the interview: browser Speech Recognition (STT), transcript shown read-only (non-editable) and submitted as-is; typing stays as the fallback. Rationale: typing answers inside a 60-minute interview is not time-efficient. | done |
+| P1-2 | Voice output (TTS) for panelist turns | parked |
+| P1-3 | Cloudflare Worker free-tier proxy (shared key + per-IP rate limiting) | parked |
+| P1-4 | Interview history | parked |
+| P1-5 | Question bank enriched from awardee experiences | parked |
 
 ## Known follow-ups (small, non-blocking)
 
@@ -91,6 +94,31 @@ needs user direction before starting.
 ## Progress log
 
 <!-- Newest first. Format: YYYY-MM-DD · TASK-ID · what changed · notes for next session -->
+
+- 2026-08-17 · P1-1 · feat(voice): pause-based sentence punctuation. The
+  speech engine never emits punctuation, so multi-sentence answers now get
+  sentence breaks from timing: when speech resumes ≥ `SENTENCE_GAP_MS` (1.5 s)
+  after the last finalized chunk — or the listening segment restarts after
+  silence — the previous sentence is closed with `.` and the next capitalized
+  (`appendFinalChunk(existing, chunk, newSentence)` in `lib/voice.ts`);
+  `finish()` also appends a trailing period via `finalizePunctuation`. Handles
+  straight and curly closing quotes. 7 new tests (`pnpm test`: 258 pass).
+  Gates: lint, typecheck, build all pass.
+
+- 2026-08-17 · P1-1 · feat(interview): voice input mode (user-directed, starts
+  Post-v1). The composer now offers a voice mode alongside typing: answers are
+  spoken, transcribed by the browser Speech Recognition API (continuous
+  listening with auto-restart after pauses, live interim words), and shown in a
+  read-only field — non-editable by design and submitted verbatim, like a real
+  interview. Recognition language follows the session language (id-ID ↔ en-US);
+  the mic auto-closes while the panel is busy. Unsupported browsers
+  (Firefox/Safari) or a denied microphone fall back to typing with localized
+  messaging. New files: `lib/voice.ts`, `hooks/use-voice-input.ts`,
+  `lib/voice.test.ts` (9 tests); i18n copy in both locales and a new privacy
+  page section disclose that transcription runs on the browser's own speech
+  service — audio never reaches the LLM endpoint or this project. No new
+  dependencies. `pnpm test`: 251 pass. Gates: lint, typecheck, build all pass.
+  Next: P1-2 (TTS) or another user-directed Post-v1 task.
 
 - 2026-08-17 · fix(llm) · Generous response-wait timeout: `guardedFetch` now
   wraps every attempt in `fetchWithTimeout` (`RESPONSE_TIMEOUT_MS` = 120 s).
