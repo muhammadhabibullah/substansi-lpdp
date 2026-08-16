@@ -1,0 +1,392 @@
+{
+  "schemaVersion": 2,
+  "summary": {
+    "evidenceMode": "session-rich",
+    "evidenceBoundary": {
+      "manifest": {
+        "schemaVersion": 2,
+        "sourceFingerprint": "c493c13ef90f8a44",
+        "adapterVersion": "qoder-task-loop-source-v2",
+        "platform": "qoder",
+        "selection": {
+          "strategy": "all-eligible",
+          "eligibleCount": 1,
+          "analyzedCount": 1,
+          "confidence": "High"
+        }
+      },
+      "episodeCoverage": {
+        "episodeCount": 2,
+        "editedEpisodeCount": 2,
+        "closedEpisodeCount": 0,
+        "recoveredEpisodeCount": 0
+      },
+      "deliveryEvidenceLevels": [],
+      "sourceGaps": []
+    },
+    "semanticFacets": {
+      "schemaVersion": 1,
+      "status": "supplementary",
+      "entries": [
+        {
+          "id": "session-insight:source-coverage",
+          "kind": "redacted-summary",
+          "episodeRef": null,
+          "status": "candidate",
+          "labels": [
+            "source-coverage",
+            "High"
+          ],
+          "summary": "Analyzed 1 of 1 sessions; 1/6 enabled source roots exist. Use this as the current workspace evidence boundary for final insight cards.",
+          "evidenceRefs": [],
+          "modelVersion": "session-insights-v1"
+        },
+        {
+          "id": "session-insight:validation-behavior",
+          "kind": "redacted-summary",
+          "episodeRef": null,
+          "status": "candidate",
+          "labels": [
+            "validation-behavior",
+            "Low"
+          ],
+          "summary": "No validation command category was observed in the analyzed session sample. Inspect more sessions or add explicit validation guidance before claiming validation-after-edit behavior.",
+          "evidenceRefs": [],
+          "modelVersion": "session-insights-v1"
+        },
+        {
+          "id": "session-insight:post-edit-validation",
+          "kind": "rework-correction",
+          "episodeRef": null,
+          "status": "candidate",
+          "labels": [
+            "post-edit-validation",
+            "High"
+          ],
+          "summary": "Observed 2 edit event(s), but no later validation command in the analyzed sample. Keep this as bounded sample context only; fewer than five project edit events is too small for a post-edit finding.",
+          "evidenceRefs": [
+            {
+              "kind": "global-project-jsonl",
+              "id": "session-insight-3-1",
+              "type": "assistant",
+              "line": 70
+            }
+          ],
+          "modelVersion": "session-insights-v1"
+        },
+        {
+          "id": "session-insight:execution-friction",
+          "kind": "friction-taxonomy",
+          "episodeRef": null,
+          "status": "candidate",
+          "labels": [
+            "execution-friction",
+            "Low"
+          ],
+          "summary": "No strong execution friction signal in the analyzed sample. Keep friction claims narrow unless additional failed commands, rejected actions, or warnings are inspected.",
+          "evidenceRefs": [],
+          "modelVersion": "session-insights-v1"
+        },
+        {
+          "id": "session-insight:tool-mix",
+          "kind": "redacted-summary",
+          "episodeRef": null,
+          "status": "candidate",
+          "labels": [
+            "tool-mix",
+            "High"
+          ],
+          "summary": "Most observed tool: Read (10). Use this as workflow evidence, then inspect bounded sessions before claiming user intent.",
+          "evidenceRefs": [
+            {
+              "kind": "global-project-jsonl",
+              "id": "session-insight-5-1",
+              "type": "assistant",
+              "line": 11
+            }
+          ],
+          "modelVersion": "session-insights-v1"
+        },
+        {
+          "id": "session-insight:session-usage-efficiency",
+          "kind": "redacted-summary",
+          "episodeRef": null,
+          "status": "candidate",
+          "labels": [
+            "session-usage-efficiency",
+            "High"
+          ],
+          "summary": "The analysis covered 1 sessions: none met the active-long threshold. This activity describes effort only; token or credit evidence is incomplete and does not establish model preference, quality, or savings.",
+          "evidenceRefs": [],
+          "modelVersion": "session-insights-v1"
+        }
+      ]
+    },
+    "learningCapture": {
+      "schemaVersion": 1,
+      "state": "N/A",
+      "summary": "N/A — requires two comparable observation windows and an intervention comparison.",
+      "interventions": []
+    },
+    "aiAgentPractice": {
+      "inspectedSurfaces": [
+        "Rules",
+        "Workflows"
+      ],
+      "coverageRows": [
+        {
+          "surface": "Rules",
+          "scopes": [
+            "Project"
+          ],
+          "count": 1,
+          "paths": [
+            "AGENTS.md"
+          ]
+        },
+        {
+          "surface": "Workflows",
+          "scopes": [
+            "Project"
+          ],
+          "count": 2,
+          "paths": [
+            ".github/workflows/ci.yml",
+            ".github/workflows/deploy.yml"
+          ]
+        },
+        {
+          "surface": "Memories",
+          "scopes": [
+            "Project"
+          ],
+          "count": 15
+        },
+        {
+          "surface": "Skills",
+          "scopes": [
+            "Global",
+            "Plugin"
+          ],
+          "count": 4,
+          "paths": [
+            "~/.agents/skills/find-skills/SKILL.md",
+            "~/.qoder/plugins/cache/qoder-bundler/better-harness/skills/better-harness/SKILL.md",
+            "~/.qoder/plugins/cache/qoder-bundler/qoder-create-plugin/skills/create-plugin/SKILL.md",
+            "~/.qoder/plugins/cache/qoder-marketplace/qmind/0.1.0/skills/qmind-knowledge/SKILL.md"
+          ]
+        },
+        {
+          "surface": "Hooks",
+          "scopes": [
+            "Project"
+          ],
+          "count": 0
+        },
+        {
+          "surface": "Commands",
+          "scopes": [
+            "Project"
+          ],
+          "count": 0
+        },
+        {
+          "surface": "Custom Agents",
+          "scopes": [
+            "Project"
+          ],
+          "count": 0
+        },
+        {
+          "surface": "MCP",
+          "scopes": [
+            "Plugin"
+          ],
+          "count": 1,
+          "paths": [
+            "~/.qoder/plugins/cache/qoder-bundler/qoder-computer-use/mcp.json"
+          ]
+        },
+        {
+          "surface": "Plugins",
+          "scopes": [
+            "Plugin"
+          ],
+          "count": 4,
+          "paths": [
+            "~/.qoder/plugins/cache/qoder-bundler/better-harness/.qoder-plugin/plugin.json",
+            "~/.qoder/plugins/cache/qoder-marketplace/qmind/0.1.0/.qoder-plugin/plugin.json",
+            "~/.qoder/plugins/cache/qoder-bundler/qoder-computer-use/.qoder-plugin/plugin.json",
+            "~/.qoder/plugins/cache/qoder-bundler/qoder-create-plugin"
+          ]
+        }
+      ],
+      "repositorySourceRows": [],
+      "memoryDetails": {
+        "contentPolicy": "metadata-only",
+        "scanState": "scanned-present",
+        "scopeCounts": [
+          {
+            "scope": "Project",
+            "count": 15
+          }
+        ],
+        "integrity": {
+          "status": "reviewed",
+          "titleCount": 15,
+          "reviewedTitleCount": 15,
+          "truncated": false,
+          "exactCollisionGroups": 0,
+          "similarityCandidates": 0
+        }
+      }
+    },
+    "usageActivity": {
+      "schemaVersion": 2,
+      "dateBasis": "UTC",
+      "measurementBasis": "session-starts-active-estimate-model-active-session-days-skill-invocations-and-loads",
+      "truncated": false,
+      "dates": [
+        "2026-08-16"
+      ],
+      "sessions": {
+        "total": 1,
+        "starts": [
+          1
+        ],
+        "activeMinutes": [
+          5.1
+        ]
+      },
+      "models": [],
+      "skills": []
+    },
+    "usageEfficiency": {
+      "schemaVersion": 2,
+      "selection": {
+        "strategy": "all-eligible",
+        "eligibleSessionCount": 1,
+        "analyzedSessionCount": 1,
+        "complete": true
+      },
+      "roles": {
+        "userThreadCandidateCount": 0,
+        "childAgentCandidateCount": 1
+      },
+      "longSessions": {
+        "activeCount": 0,
+        "wallOnlyCount": 0,
+        "longestActiveMinutes": 0,
+        "activeRatio": 0,
+        "estimate": {
+          "method": "capped-event-gap",
+          "activeThresholdMinutes": 45,
+          "gapCapMinutes": 5,
+          "idleGapMinutes": 30
+        },
+        "samples": []
+      },
+      "accounting": {
+        "mode": "effort-proxy",
+        "responseCount": 0,
+        "modelAttributedResponseCount": 0,
+        "unattributedResponseCount": 0,
+        "usageFieldObservedCount": 0,
+        "nonZeroUsageCount": 0,
+        "exactCreditsAvailable": false,
+        "pricingVersion": null
+      },
+      "modelUsage": [],
+      "outcomeReview": {
+        "status": "not-applicable",
+        "reviewedCandidateCount": 0,
+        "reviewedActiveLongCount": 0,
+        "comparableModelOutcomeEvidence": false,
+        "recommendation": "controlled-a-b-required"
+      }
+    },
+    "projectName": "substansi-lpdp",
+    "locale": "en",
+    "modelId": "agent-work-loop-v4",
+    "reportContractVersion": 26,
+    "overview": "The project has strong CI validation and clear agent guidance, but deployment is not gated on CI results and the key-safety enforcement path in the LLM gateway is untested.",
+    "dimensions": [
+      {
+        "id": "task-understanding",
+        "label": "Task Understanding",
+        "score": 72,
+        "summary": "AGENTS.md provides clear hard constraints, DoD, and routes to PLAN.md and TASKS.md as authoritative context.",
+        "findingRefs": []
+      },
+      {
+        "id": "controlled-execution",
+        "label": "Controlled Execution",
+        "score": 68,
+        "summary": "Documented scripts, CI, and BYOK model provide a supported operating surface; session evidence is unavailable.",
+        "findingRefs": []
+      },
+      {
+        "id": "change-validation",
+        "label": "Change Validation",
+        "score": 76,
+        "summary": "271 fast unit tests, typecheck, lint, and build gates are integrated in CI, but the key-safety enforcement path is not verified.",
+        "findingRefs": [
+          "key-safety-headers-untested"
+        ]
+      },
+      {
+        "id": "reliable-delivery",
+        "label": "Reliable Delivery",
+        "score": 48,
+        "summary": "CI exists but deploy.yml runs independently on main push; a change that fails validation can still reach production.",
+        "findingRefs": [
+          "deploy-not-gated-on-ci"
+        ]
+      },
+      {
+        "id": "learning-capture",
+        "label": "Learning Capture",
+        "score": 35,
+        "summary": "No comparable later outcome has validated a reusable improvement yet; session evidence is insufficient for recurrence detection.",
+        "findingRefs": []
+      }
+    ],
+    "assignmentSummaries": []
+  },
+  "findings": [
+    {
+      "id": "deploy-not-gated-on-ci",
+      "title": "Changes deploy to production without passing the project's own validation gates",
+      "severity": "Medium",
+      "reason": "ci.yml runs lint, typecheck, test, build, and static export assertions on push to main. deploy.yml also triggers on push to main but runs only install and build with no reference to CI results. Both workflows trigger independently on the same event, so a commit that fails CI still reaches GitHub Pages. The project's AGENTS.md Definition of Done requires lint, typecheck, and build to pass before a task is complete, but the delivery pipeline does not enforce that gate.",
+      "dimensionRefs": [
+        "reliable-delivery"
+      ],
+      "subdimensionRefs": [
+        "acceptance-evidence"
+      ],
+      "aiFixPrompt": "Wire deploy.yml to depend on ci.yml completion so that only validated changes reach production.\n\nOptions (choose the smallest safe route):\n1. Change deploy.yml trigger from `push: branches: [main]` to `workflow_run: workflows: [\"CI\"] branches: [main] types: [completed]` with a condition on `github.event.workflow_run.conclusion == 'success'`.\n2. Add a `needs: ci` job dependency if both workflows are merged into one.\n\nKeep the manual `workflow_dispatch` trigger for emergency redeploys.\n\n## Validation\n- Push a change that fails lint or test to a branch, merge to main, and confirm deploy does not run.\n- Push a change that passes CI, merge to main, and confirm deploy succeeds.\n- Run a manual deploy via workflow_dispatch and confirm it still works independently.",
+      "expectedArtifact": "Config",
+      "expectedOutput": [
+        "Update the existing Config owner identified by the reviewed evidence and retain a focused validation result."
+      ]
+    },
+    {
+      "id": "key-safety-headers-untested",
+      "title": "The privacy guarantee that API keys are stripped before cross-origin requests is not verified by tests",
+      "severity": "Medium",
+      "reason": "lib/llm.ts implements a guardedFetch wrapper that strips Authorization and api-key headers when the request URL does not match the user-configured base URL, and sets redirect: 'error' to prevent silent cross-origin redirects carrying credentials. This is a hard constraint from AGENTS.md (constraints #2 and #3: BYOK-only, keys sent only to user-configured base URL). The test suite in lib/llm.test.ts covers the pure isSameOriginAsBase predicate (origin comparison) but has zero assertions on the actual header-stripping or redirect-blocking behavior of guardedFetch. An agent must reason about the safety guarantee from code alone; no test can confirm it holds after a refactor.",
+      "dimensionRefs": [
+        "change-validation"
+      ],
+      "subdimensionRefs": [
+        "relevant-check"
+      ],
+      "aiFixPrompt": "Add tests to lib/llm.test.ts that verify the guardedFetch wrapper's privacy behavior:\n\n1. Mock fetch and assert that a request to the same origin preserves Authorization and api-key headers.\n2. Assert that a request to a different origin has both headers removed.\n3. Assert that redirect: 'error' is set on the outgoing RequestInit.\n4. Cover the edge case where the URL is constructed from a relative path (new URL(path, base) is same-origin).\n\nKeep the existing isSameOriginAsBase tests; they already cover the pure predicate. The new tests exercise the fetch wrapper that composes it.\n\n## Validation\n- Run `pnpm test` and confirm the new tests pass.\n- Temporarily remove the header-stripping logic and confirm at least one test fails.",
+      "expectedArtifact": "Test",
+      "expectedOutput": [
+        "Update the existing Test owner identified by the reviewed evidence and retain a focused validation result."
+      ]
+    }
+  ]
+}
