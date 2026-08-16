@@ -100,19 +100,21 @@ lib/
 ```
 
 ### Interview engine
-- **Phase state machine** driving a 60-minute budget (approximate minutes):
-  1. Pembukaan & perkenalan diri (5')
-  2. Latar belakang & motivasi studi (10')
-  3. Rencana studi / proposal riset — deep dive by Akademisi, incl. English segment if luar negeri (15')
+- **Phase state machine** driving a 60-minute budget in a **strict session
+  order — one panelist leads each block** (approximate minutes):
+  1. Pembukaan & perkenalan diri — Akademisi (5')
+  2. Rencana studi / proposal riset — deep dive by Akademisi, incl. English segment if luar negeri (15')
+  3. Latar belakang & motivasi studi — Psikolog (10')
   4. Kepribadian, kesiapan, konsistensi — Psikolog (10')
   5. Nasionalisme & rencana kontribusi — Tim LPDP (15')
-  6. Pertanyaan penutup & closing statement (5')
+  6. Pertanyaan penutup & closing statement — Tim LPDP (5')
 
-  Each role leads 15–20 minutes of questioning within the total: Akademisi 15'
-  (study plan), Psikolog 20' (motivation + personality), Tim LPDP 15'
-  (contribution) plus the LPDP-led opening and closing. Every panelist
-  participates in every phase, so a role may interject a short follow-up
-  mid-way through another panelist's block when an answer demands it.
+  Each role leads about 20 minutes of questioning: Akademisi 20' (opening +
+  study plan), Psikolog 20' (motivation + personality), Tim LPDP 20'
+  (contribution + closing). Every panelist participates in every phase, but
+  panelists other than the phase lead may only interject with a short
+  clarifying follow-up on a point that interests them, then the floor returns
+  to the lead.
 - **Moderator step** (cheap, small prompt): given phase, elapsed time, and last exchange → picks next panelist + a directive ("probe the inconsistency between his CV gap year and his claimed leadership").
 - **Panelist step**: full persona prompt + relevant document excerpts + conversation window → streamed question/response in character.
 - Documents are chunked at setup; each panelist gets the excerpts relevant to its focus (study plan → Akademisi; essay kontribusi → LPDP; CV → all).

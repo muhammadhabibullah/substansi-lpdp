@@ -159,7 +159,7 @@ describe('evaluatePhase / applyPhaseAction', () => {
     expect(action.type).toBe('advance');
 
     const advanced = applyPhaseAction(current, action);
-    expect(advanced.phase).toBe('motivation');
+    expect(advanced.phase).toBe('studyPlan');
     expect(advanced.phaseStartedMs).toBe(6 * MINUTE);
   });
 

@@ -81,6 +81,7 @@ direction (2026-08-17); first task is voice input (P1-1).
 | P1-5 | Question bank enriched from awardee experiences | parked |
 | P1-6 | Voice-first composer: voice input is the default mode and the transcript becomes editable once listening stops (supersedes P1-1's read-only rule per user feedback #2) | done |
 | P1-7 | Per-role time model: each role leads 15–20 min (Akademisi 15', Psikolog 20', Tim LPDP 15' + opening/closing) within the 60' total, follow-up interjections allowed in any phase, and "Unsur LPDP" renamed to "Tim LPDP" (user feedback #3) | done |
+| P1-8 | Strict session order: Akademisi (opening + study plan) → Psikolog (motivation + personality) → Tim LPDP (contribution + closing), each ~20' lead; other roles may still interject one short clarifying follow-up in another session (user feedback #4) | done |
 
 ## Known follow-ups (small, non-blocking)
 
@@ -98,6 +99,13 @@ direction (2026-08-17); first task is voice input (P1-1).
 ## Progress log
 
 <!-- Newest first. Format: YYYY-MM-DD · TASK-ID · what changed · notes for next session -->
+
+- 2026-08-17 · P1-8 · feat(panel): strict session order (user feedback #4).
+  Phases reordered to Akademisi block (opening + studyPlan) → Psikolog block
+  (motivation + personality) → Tim LPDP block (contribution + closing) with
+  budgets 5/15/10/10/15/5 (each role leads ~20'); opening lead moved
+  LPDP → Akademisi, closing stays LPDP; moderator prompt now states the fixed
+  order and limits off-block interjections to one clarifying follow-up.
 
 - 2026-08-17 · ad-hoc · test(interview): hook-level lifecycle coverage for
   `hooks/use-interview.ts` (3 tests): busy guard rejects a second submit while

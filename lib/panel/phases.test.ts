@@ -21,19 +21,21 @@ import {
 const MINUTE = 60_000;
 
 describe('phase table matches PLAN §3', () => {
-  it('has the six phases in order', () => {
+  it('has the six phases in strict role order', () => {
+    // Akademisi (opening + study plan) → Psikolog (motivation + personality)
+    // → Tim LPDP (contribution + closing).
     expect(PHASES.map((phase) => phase.id)).toEqual([
       'opening',
-      'motivation',
       'studyPlan',
+      'motivation',
       'personality',
       'contribution',
       'closing',
     ]);
   });
 
-  it('uses the documented 5/10/15/10/15/5 minute budgets', () => {
-    expect(PHASES.map((phase) => phase.minutes)).toEqual([5, 10, 15, 10, 15, 5]);
+  it('uses the documented 5/15/10/10/15/5 minute budgets', () => {
+    expect(PHASES.map((phase) => phase.minutes)).toEqual([5, 15, 10, 10, 15, 5]);
   });
 
   it('totals a 60-minute interview', () => {
@@ -42,9 +44,12 @@ describe('phase table matches PLAN §3', () => {
   });
 
   it('leads each phase with the panelist PLAN assigns', () => {
+    expect(PHASES.find((p) => p.id === 'opening')?.lead).toBe('akademisi');
     expect(PHASES.find((p) => p.id === 'studyPlan')?.lead).toBe('akademisi');
+    expect(PHASES.find((p) => p.id === 'motivation')?.lead).toBe('psikolog');
     expect(PHASES.find((p) => p.id === 'personality')?.lead).toBe('psikolog');
     expect(PHASES.find((p) => p.id === 'contribution')?.lead).toBe('lpdp');
+    expect(PHASES.find((p) => p.id === 'closing')?.lead).toBe('lpdp');
   });
 
   it('only lets participants of a phase speak in it', () => {
@@ -62,16 +67,16 @@ describe('phase table matches PLAN §3', () => {
     }
   });
 
-  it('gives each role a 15–20 minute lead block', () => {
+  it('gives each role a ~20 minute lead block', () => {
     const leadMinutes: Record<string, number> = { akademisi: 0, psikolog: 0, lpdp: 0 };
     for (const phase of PHASES) {
       leadMinutes[phase.lead] = (leadMinutes[phase.lead] ?? 0) + phase.minutes;
     }
-    // Akademisi leads the study-plan deep dive (15'), Psikolog motivation +
-    // personality (20'), Tim LPDP contribution (15') plus opening & closing.
-    expect(leadMinutes.akademisi).toBe(15);
+    // Akademisi leads opening + study plan (20'), Psikolog motivation +
+    // personality (20'), Tim LPDP contribution + closing (20').
+    expect(leadMinutes.akademisi).toBe(20);
     expect(leadMinutes.psikolog).toBe(20);
-    expect(leadMinutes.lpdp).toBe(25);
+    expect(leadMinutes.lpdp).toBe(20);
   });
 });
 
@@ -81,8 +86,8 @@ describe('offsets and deadlines', () => {
   });
 
   it('accumulates prior budgets', () => {
-    expect(phaseStartOffsetMs('motivation')).toBe(5 * MINUTE);
-    expect(phaseStartOffsetMs('studyPlan')).toBe(15 * MINUTE);
+    expect(phaseStartOffsetMs('studyPlan')).toBe(5 * MINUTE);
+    expect(phaseStartOffsetMs('motivation')).toBe(20 * MINUTE);
     expect(phaseStartOffsetMs('closing')).toBe(55 * MINUTE);
   });
 
@@ -94,7 +99,7 @@ describe('offsets and deadlines', () => {
     expect(phaseIndex('opening')).toBe(0);
     expect(isLastPhase('closing')).toBe(true);
     expect(isLastPhase('opening')).toBe(false);
-    expect(nextPhase('opening')).toBe('motivation');
+    expect(nextPhase('opening')).toBe('studyPlan');
     expect(nextPhase('closing')).toBeNull();
   });
 });
@@ -119,12 +124,12 @@ describe('decidePhase', () => {
 
   it('advances once the budget is spent and the minimum is met', () => {
     const action = decidePhase({ ...base, elapsedMs: 6 * MINUTE, questionsInPhase: 1 });
-    expect(action).toMatchObject({ type: 'advance', to: 'motivation' });
+    expect(action).toMatchObject({ type: 'advance', to: 'studyPlan' });
   });
 
   it('advances early when the question cap is reached', () => {
     const action = decidePhase({ ...base, elapsedMs: MINUTE, questionsInPhase: 3 });
-    expect(action).toMatchObject({ type: 'advance', to: 'motivation' });
+    expect(action).toMatchObject({ type: 'advance', to: 'studyPlan' });
   });
 
   it('catches up when the interview is behind the overall schedule', () => {
@@ -136,7 +141,7 @@ describe('decidePhase', () => {
       phaseStartedMs: 6 * MINUTE,
       questionsInPhase: 1,
     });
-    expect(action).toMatchObject({ type: 'advance', to: 'motivation' });
+    expect(action).toMatchObject({ type: 'advance', to: 'studyPlan' });
   });
 
   it('finishes when the total budget is exhausted', () => {
@@ -159,6 +164,12 @@ describe('decidePhase', () => {
       questionsInPhase: 2,
     });
     expect(action.type).toBe('finish');
+  });
+
+  it('keeps the session order strict: no phase may be skipped or reordered', () => {
+    for (let index = 0; index < PHASES.length - 1; index += 1) {
+      expect(nextPhase(PHASES[index]!.id)).toBe(PHASES[index + 1]!.id);
+    }
   });
 
   it('finishes the closing phase at its question cap', () => {
@@ -206,8 +217,8 @@ describe('decidePhase', () => {
     expect(guard).toBeLessThan(200);
     expect(visited).toEqual([
       'opening',
-      'motivation',
       'studyPlan',
+      'motivation',
       'personality',
       'contribution',
       'closing',

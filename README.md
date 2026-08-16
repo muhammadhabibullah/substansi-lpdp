@@ -28,11 +28,13 @@ penilaian berbasis rubrik dengan kutipan bukti dari jawaban Anda sendiri.
 1. **Persiapan** — isi profil program dan sertakan CV, rencana studi (Magister)
    atau proposal penelitian (Doktor), serta esai kontribusi. Semua diproses di
    browser.
-2. **Wawancara** — 6 tahap dengan jatah waktu 5/10/15/10/15/5 menit dan timer
-   60 menit yang terlihat. Setiap pewawancara memimpin blok bertanya 15–20
-   menit dan boleh menyela dengan pertanyaan lanjutan singkat di luar
-   bloknya. Panel menggali inkonsistensi dengan dokumen Anda dan beralih ke
-   bahasa Inggris jika tujuan Anda luar negeri.
+2. **Wawancara** — 6 tahap dengan jatah waktu 5/15/10/10/15/5 menit dan timer
+   60 menit yang terlihat. Urutan sesi tetap: Akademisi (pembukaan + rencana
+   studi) → Psikolog (motivasi + kepribadian) → Tim LPDP (kontribusi +
+   penutup); setiap pewawancara memimpin blok sekitar 20 menit dan boleh
+   menyela dengan satu pertanyaan klarifikasi singkat di luar bloknya. Panel
+   menggali inkonsistensi dengan dokumen Anda dan beralih ke bahasa Inggris
+   jika tujuan Anda luar negeri.
 3. **Laporan** — skor 8 dimensi rubrik (total 100) + band rekomendasi, kutipan
    bukti, catatan tiap pewawancara, checklist indikator kuat/lemah, dan langkah
    perbaikan. Bisa diunduh sebagai Markdown atau dicetak ke PDF.
@@ -172,9 +174,11 @@ rubric-scored report.
 1. **Setup** — fill in your programme profile and add your CV, study plan
    (master's) or research proposal (doctorate), and contribution essay. Parsed
    in-browser.
-2. **Interview** — six phases on a visible 60-minute clock (5/10/15/10/15/5 min).
-   Each panelist leads a 15–20 minute block of questioning and may interject a
-   short follow-up outside their block. The panel probes inconsistencies
+2. **Interview** — six phases on a visible 60-minute clock (5/15/10/10/15/5 min).
+   The session order is fixed: Academic (opening + study plan) → Psychologist
+   (motivation + personality) → LPDP Team (contribution + closing). Each
+   panelist leads a ~20-minute block and may interject a single short
+   clarifying follow-up outside their block. The panel probes inconsistencies
    against your documents and switches to English mid-session if your
    destination is overseas.
 3. **Report** — eight weighted rubric dimensions scored out of 100, a

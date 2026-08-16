@@ -1,11 +1,11 @@
 /**
  * lib/panel/phases.ts — the six-phase interview state machine (PLAN §3).
  *
- * Budgets: 5 / 10 / 15 / 10 / 15 / 5 minutes = 60 minutes total. Each role
- * leads blocks totalling 15–20 minutes of asking time: Akademisi 15'
- * (study plan), Psikolog 20' (motivation + personality), Tim LPDP 15'
- * (contribution) on top of the LPDP-led opening and closing. All three
- * panelists participate in every phase, so any role may interject a short
+ * Sessions follow a strict role order: Akademisi (opening + study plan),
+ * then Psikolog (motivation + personality), then Tim LPDP (contribution +
+ * closing). Budgets: 5 / 15 / 10 / 10 / 15 / 5 minutes = 60 minutes total,
+ * so each role leads about 20 minutes of asking time. All three panelists
+ * participate in every phase, so any role may interject a short clarifying
  * follow-up mid-way through another role's block when an answer demands it.
  *
  * Phases advance on elapsed time, but only at a turn boundary and only after
@@ -38,18 +38,10 @@ export const PHASES: readonly PhaseDefinition[] = [
   {
     id: 'opening',
     minutes: 5,
-    lead: 'lpdp',
-    participants: ['lpdp', 'akademisi', 'psikolog'],
+    lead: 'akademisi',
+    participants: ['akademisi', 'psikolog', 'lpdp'],
     minQuestions: 1,
     maxQuestions: 3,
-  },
-  {
-    id: 'motivation',
-    minutes: 10,
-    lead: 'psikolog',
-    participants: ['psikolog', 'akademisi', 'lpdp'],
-    minQuestions: 2,
-    maxQuestions: 5,
   },
   {
     id: 'studyPlan',
@@ -58,6 +50,14 @@ export const PHASES: readonly PhaseDefinition[] = [
     participants: ['akademisi', 'psikolog', 'lpdp'],
     minQuestions: 3,
     maxQuestions: 8,
+  },
+  {
+    id: 'motivation',
+    minutes: 10,
+    lead: 'psikolog',
+    participants: ['psikolog', 'akademisi', 'lpdp'],
+    minQuestions: 2,
+    maxQuestions: 5,
   },
   {
     id: 'personality',

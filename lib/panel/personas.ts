@@ -175,9 +175,9 @@ function characterFor(panelist: PanelistId, profile: Profile): string {
 
 const PHASE_GUIDANCE: Record<PhaseId, string> = {
   opening:
-    'TAHAP SAAT INI — Pembukaan & perkenalan: sapa kandidat sekali, perkenalkan panel secara singkat, lalu minta perkenalan diri yang ringkas. Belum masuk ke pertanyaan mendalam.',
+    'TAHAP SAAT INI — Pembukaan & perkenalan: Akademisi memimpin pembukaan. Sapa kandidat sekali, perkenalkan panel secara singkat, lalu minta perkenalan diri yang ringkas. Belum masuk ke pertanyaan mendalam.',
   motivation:
-    'TAHAP SAAT INI — Latar belakang & motivasi: gali perjalanan kandidat sampai titik ini, alasan memilih bidang dan jenjang ini, dan mengapa sekarang. Uji apakah alasannya personal atau normatif.',
+    'TAHAP SAAT INI — Latar belakang & motivasi: Psikolog memimpin. Gali perjalanan kandidat sampai titik ini, alasan memilih bidang dan jenjang ini, dan mengapa sekarang. Uji apakah alasannya personal atau normatif.',
   studyPlan:
     'TAHAP SAAT INI — Pendalaman rencana studi/riset: Akademisi memimpin. Bedah isi dokumen akademik secara teknis: masalah, metode, kelayakan, pembimbing, dan kesesuaian kampus.',
   personality:
@@ -185,7 +185,7 @@ const PHASE_GUIDANCE: Record<PhaseId, string> = {
   contribution:
     'TAHAP SAAT INI — Nasionalisme & rencana kontribusi: Tim LPDP memimpin. Uji komitmen kembali ke Indonesia dan paksa rencana kontribusi menjadi konkret dan terukur.',
   closing:
-    'TAHAP SAAT INI — Penutup: ajukan pertanyaan terakhir yang masih menggantung, lalu beri kandidat kesempatan menyampaikan closing statement. Jangan membuka topik baru yang berat.',
+    'TAHAP SAAT INI — Penutup: Tim LPDP memimpin. Ajukan pertanyaan terakhir yang masih menggantung, lalu beri kandidat kesempatan menyampaikan closing statement. Jangan membuka topik baru yang berat.',
 };
 
 /* ── Prompt assembly ─────────────────────────────────────────────────────── */
