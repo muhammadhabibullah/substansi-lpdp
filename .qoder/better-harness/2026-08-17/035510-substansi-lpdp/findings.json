@@ -1,0 +1,191 @@
+{
+  "summary": {
+    "projectName": "substansi-lpdp",
+    "locale": "en",
+    "modelId": "agent-work-loop-v4",
+    "reportContractVersion": 26,
+    "overview": "Strong static-app discipline routes agent work well: AGENTS.md names owners and hard constraints, CI mechanically enforces them, and a fast unit suite exercises the LLM layer including recovery paths. The gaps are at the edges of that wiring: the highest-churn interview loop is verified only manually, the key-leak scan recognizes one key shape, and session records are too thin to judge repeated work or whether captured learning helped.",
+    "aiAgentPractice": {
+      "inspectedSurfaces": [
+        "Rules",
+        "Workflows"
+      ],
+      "coverageRows": [
+        {
+          "surface": "Rules",
+          "scopes": [
+            "Project"
+          ],
+          "count": 1,
+          "paths": [
+            "AGENTS.md"
+          ]
+        },
+        {
+          "surface": "Skills",
+          "scopes": [
+            "Global",
+            "Plugin"
+          ],
+          "count": 4,
+          "paths": [
+            "~/.agents/skills/find-skills/SKILL.md",
+            "~/.qoder/plugins/cache/qoder-bundler/better-harness/skills/better-harness/SKILL.md",
+            "~/.qoder/plugins/cache/qoder-bundler/qoder-create-plugin/skills/create-plugin/SKILL.md",
+            "~/.qoder/plugins/cache/qoder-marketplace/qmind/0.1.0/skills/qmind-knowledge/SKILL.md"
+          ]
+        },
+        {
+          "surface": "MCP",
+          "scopes": [
+            "Plugin"
+          ],
+          "count": 1,
+          "paths": [
+            "~/.qoder/plugins/cache/qoder-bundler/qoder-computer-use/mcp.json"
+          ]
+        },
+        {
+          "surface": "Workflows",
+          "scopes": [
+            "Project"
+          ],
+          "count": 2,
+          "paths": [
+            ".github/workflows/ci.yml",
+            ".github/workflows/deploy.yml"
+          ]
+        },
+        {
+          "surface": "Plugins",
+          "scopes": [
+            "Plugin"
+          ],
+          "count": 4,
+          "paths": [
+            "~/.qoder/plugins/cache/qoder-bundler/better-harness/.qoder-plugin/plugin.json",
+            "~/.qoder/plugins/cache/qoder-marketplace/qmind/0.1.0/.qoder-plugin/plugin.json",
+            "~/.qoder/plugins/cache/qoder-bundler/qoder-computer-use/.qoder-plugin/plugin.json",
+            "~/.qoder/plugins/cache/qoder-bundler/qoder-create-plugin"
+          ]
+        },
+        {
+          "surface": "Memories",
+          "scopes": [
+            "Project"
+          ],
+          "count": 20
+        },
+        {
+          "surface": "Hooks",
+          "scopes": [
+            "Project"
+          ],
+          "count": 0
+        },
+        {
+          "surface": "Commands",
+          "scopes": [
+            "Project"
+          ],
+          "count": 0
+        },
+        {
+          "surface": "Custom Agents",
+          "scopes": [
+            "Project"
+          ],
+          "count": 0
+        }
+      ],
+      "repositorySourceRows": []
+    },
+    "assignmentSummaries": [],
+    "dimensions": [
+      {
+        "id": "task-understanding",
+        "label": "Task Understanding",
+        "score": 72,
+        "summary": "AGENTS.md routes decisions to PLAN.md and TASKS.md, states a per-task Definition of Done and six hard constraints, and the commit history shows task-scoped work with logged rationale; no session-linked episode proves day-to-day application.",
+        "findingRefs": []
+      },
+      {
+        "id": "controlled-execution",
+        "label": "Controlled Execution",
+        "score": 70,
+        "summary": "The documented pnpm command surface was exercised during review (test, typecheck, lint all pass), asset preparation is wired into dev/build, and BYOK keys stay in localStorage; host-side permission and deployment boundaries remain unobserved.",
+        "findingRefs": []
+      },
+      {
+        "id": "change-validation",
+        "label": "Change Validation",
+        "score": 62,
+        "summary": "Pure-logic layers have fast, focused tests including negative and recovery cases, and past fixes were diagnosed and revalidated with mutation checks; the highest-churn interview orchestration path has no automated check mapped to it, and the key-leak gate covers one pattern.",
+        "findingRefs": [
+          "interview-loop-manual-validation",
+          "ci-key-scan-single-pattern"
+        ]
+      },
+      {
+        "id": "reliable-delivery",
+        "label": "Reliable Delivery",
+        "score": 58,
+        "summary": "CI gates lint, typecheck, tests, build, static-export assertions, and a key scan, with Pages deploy chained on successful CI; no current-revision acceptance decision, deployment record, or rollback path could be opened from the repository.",
+        "findingRefs": []
+      },
+      {
+        "id": "learning-capture",
+        "label": "Learning Capture",
+        "score": 40,
+        "summary": "A bounded review completed but session records admit no comparable episodes, so repeated work cannot be confirmed or ruled out and no captured learning has a later outcome to prove its effect.",
+        "findingRefs": [
+          "session-record-evidence-gap"
+        ]
+      }
+    ]
+  },
+  "findings": [
+    {
+      "id": "interview-loop-manual-validation",
+      "title": "Interview loop changes rely on manual verification only",
+      "severity": "Medium",
+      "reason": "Fact: hooks/use-interview.ts and app/interview/interview-screen.tsx own the interview turn lifecycle (busy guard, abort, retry/skip, truncation buffer reset) and sit among the most-churned files in the 30-day history, yet no test file maps to them and vitest.config.ts includes only **/*.test.ts, so even a conventional hook test in .tsx form would not run. Inference: a real truncation-recovery fix already crossed this seam — the llm.ts side gained focused tests while the coordinated use-interview.ts change was verified manually, so a regression like a stuck busy state, double submit, or abort race has no automated detector. AGENTS.md testing guidance only mandates tests for pure logic, so this is an observed verification gap rather than a stated-rule violation. Owner: hooks/use-interview.ts plus the vitest include pattern. Uncertainty: the code shows defensive patterns (busyRef guard, finally-block cleanup), and the guidance may intentionally exclude this layer.",
+      "expectedOutput": [
+        "Update the existing Test owner identified by the reviewed evidence and retain a focused validation result."
+      ],
+      "expectedArtifact": "Test",
+      "aiFixPrompt": "/better-harness fix this issue\n\nAdd the smallest automated check that exercises the interview turn lifecycle in hooks/use-interview.ts. First discover how the existing vitest setup (node environment, include **/*.test.ts) can run a hook-level test; extend the include pattern only if that is the cheapest route, and keep the existing lib tests untouched. Cover at minimum: the busy guard rejecting a second submit while a turn is in flight, abort cleanup on unmount, and the truncation-retry buffer reset. Follow the testing guidance style in AGENTS.md (deterministic logic, mocked fetch).\n\n## Validation\n\n- Run pnpm typecheck and pnpm test; the new test executes under the existing CI command\n- Temporarily break the busy guard and confirm the new test fails\n- Confirm pnpm lint stays clean",
+      "dimensionRefs": [
+        "change-validation"
+      ]
+    },
+    {
+      "id": "ci-key-scan-single-pattern",
+      "title": "Non-standard API key shapes pass the CI leak scan",
+      "severity": "Low",
+      "reason": "Fact: AGENTS.md hard constraint #2 says no API key may appear in the repo, bundle, env files, or CI, and .github/workflows/ci.yml enforces it by grepping the repo and build output; the inspected pattern matches only sk-<20+ alphanumerics>. Inference: keys with other shapes (provider prefixes such as sk-or-, xai-, or base64-style tokens) commit and deploy without tripping the gate, so the explicit constraint is only partially enforced. Owner: .github/workflows/ci.yml key-scan step. Uncertainty: the project declares no required pattern breadth, and BYOK keys live in user browsers, so this is defense-in-depth rather than an observed leak.",
+      "expectedOutput": [
+        "Update the existing Config owner identified by the reviewed evidence and retain a focused validation result."
+      ],
+      "expectedArtifact": "Config",
+      "aiFixPrompt": "/better-harness fix this issue\n\nBroaden the key-leak scan in .github/workflows/ci.yml so it covers the key shapes the project actually supports, per the BYOK guidance in AGENTS.md and README (OpenAI-compatible endpoints such as OpenRouter, Groq, Ollama). Discover the current grep step first; add patterns for known provider prefixes and a long-token heuristic while keeping the scan limited to repo and build output so legitimate example text is not flagged.\n\n## Validation\n\n- Run the same grep locally against a throwaway fixture containing each supported key shape and confirm every shape matches\n- Confirm the scan still passes on the clean repository and static build output\n- Keep the workflow permissions and triggers unchanged",
+      "dimensionRefs": [
+        "change-validation"
+      ]
+    },
+    {
+      "id": "session-record-evidence-gap",
+      "title": "Repeated work cannot be detected or turned into reusable improvements from current session records",
+      "severity": "Low",
+      "reason": "Fact: the bounded 30-day review admitted only one short session with two unclosed candidate episodes and zero validation events; the evidence bundle flags source roots as missing-optional-root and disabled-source-root, and learning diagnostics report insufficient recurrence with no later outcome window. Inference: with no normalized task events, the project cannot decide whether repeated procedures exist worth making durable, or whether the captured project memories ever improved a later result — the learning boundary stays unresolved rather than clean. This is an evidence-gap finding, not a claim that no work happened. Owner: workspace session-evidence sources for this provider. Uncertainty: the emptiness may reflect disabled or unretained session sources rather than absent activity.",
+      "expectedOutput": [
+        "Update the existing Document owner identified by the reviewed evidence and retain a focused validation result."
+      ],
+      "expectedArtifact": "Document",
+      "aiFixPrompt": "/better-harness fix this issue\n\nTreat this as bounded discovery. Determine why only one of the six session source roots is enabled for this workspace: check which session-history sources the provider retains for this project and whether any retention or recording setting is disabled. Do not change project code. Once at least one source root yields eligible sessions, rerun the bounded better-harness evidence bundle and confirm it reports eligible sessions with normalized change, check, and result events.\n\n## Validation\n\n- The next evidence bundle reports at least one eligible session without missing-optional-root or disabled-source-root warnings\n- The bundle admits normalized task events (changes, checks, or results) instead of an empty admission",
+      "dimensionRefs": [
+        "learning-capture"
+      ]
+    }
+  ]
+}

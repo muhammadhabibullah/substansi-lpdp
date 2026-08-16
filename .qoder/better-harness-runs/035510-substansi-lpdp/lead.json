@@ -1,0 +1,310 @@
+{
+  "kind": "better-harness.harness-analysis-evidence",
+  "schemaVersion": 1,
+  "evidence": "HARNESS ANALYSIS EVIDENCE\n\nThis is a read-only evidence brief, not a report conclusion.\nProjected report conclusions are intentionally excluded; use the observations and boundaries below to make your own evidence-backed decisions.\nWorkspace: /Users/mac/github.com/muhammadhabibullah/substansi-lpdp\nPlatform: qoder\nLanguage: en-us\nBudget: at most 6000 estimated tokens; each evidence domain uses bounded representative rows and reports omissions.\n\nOBSERVATION SCOPE\nSource roots: 1 of 6 enabled roots exist; 7 roots were discovered.\nSession selection: analyzed 1 of 1 eligible sessions with all-eligible selection; confidence High; representative yes.\nScope: workspace; global capability metadata included yes; since 2026-07-18T00:00:00.000Z; until 2026-08-17T00:00:00.000Z.\nPrivacy boundary: reader-safe; raw prompts included no; raw commands included no; absolute home paths included no.\nSource warnings: disabled-source-root, missing-optional-root.\n\nREPOSITORY FACTS\nProject label: substansi-lpdp.\n- Task understanding: 1 observed and 1 connected signal(s). Representative evidence: 1 agent guidance file(s), 2 architecture/readme and 0 spec file(s).\n- Controlled execution: 1 observed and 1 connected signal(s). Representative evidence: 1 workspace manifest(s), workspace run/build/test scripts.\n- Change validation: 1 observed and 1 connected signal(s). Representative evidence: 12 tracked test file(s), workspace test/check script.\n- Reliable delivery: 0 observed and 1 connected signal(s). Representative evidence: 2 CI workflow file(s).\n- Agent practice coverage: Rules has 1 asset(s) in Project; paths: AGENTS.md.\n- Agent practice coverage: Skills has 4 asset(s) in Global, Plugin; paths: ~/.agents/skills/find-skills/SKILL.md, ~/.qoder/plugins/cache/qoder-bundler/better-harness/skills/better-harness/SKILL.md, ~/.qoder/plugins/cache/qoder-bundler/qoder-create-plugin/skills/create-plugin/SKILL.md, ~/.qoder/plugins/cache/qoder-marketplace/qmind/0.1.0/skills/qmind-knowledge/SKILL.md.\n- Agent practice coverage: MCP has 1 asset(s) in Plugin; paths: ~/.qoder/plugins/cache/qoder-bundler/qoder-computer-use/mcp.json.\n- Agent practice coverage: Workflows has 2 asset(s) in Project; paths: .github/workflows/ci.yml, .github/workflows/deploy.yml.\n- Agent practice coverage: Plugins has 4 asset(s) in Plugin; paths: ~/.qoder/plugins/cache/qoder-bundler/better-harness/.qoder-plugin/plugin.json, ~/.qoder/plugins/cache/qoder-marketplace/qmind/0.1.0/.qoder-plugin/plugin.json, ~/.qoder/plugins/cache/qoder-bundler/qoder-computer-use/.qoder-plugin/plugin.json, ~/.qoder/plugins/cache/qoder-bundler/qoder-create-plugin.\n- Agent practice coverage: Memories has 20 asset(s) in Project; scope counts Project=20; title review 20/20, exact collisions 0, near-title candidates 1, truncated no. Memory titles, paths, categories, and bodies omitted.\n- Agent practice coverage: Hooks has 0 asset(s) in Project.\n- Agent practice coverage: Commands has 0 asset(s) in Project.\n- Agent practice coverage: 1 additional row(s) omitted.\n- Reusable Skill evidence: scanned-empty; 0 candidate asset(s), 0 observed project Skill(s), and 0 unresolved name match(es).\n- Regression-test evidence: candidates-present; inspected 23 commit(s) and retained 4 source/test co-change candidate(s).\n  - Sources: hooks/use-interview.ts, lib/llm.ts. Tests: lib/llm.test.ts. Path-correlated yes.\n  - Sources: lib/panel/notetaker.ts. Tests: lib/panel/notetaker.test.ts. Path-correlated yes.\n  - Sources: lib/llm.ts. Tests: lib/llm.test.ts. Path-correlated yes.\n  - 1 additional co-change candidate(s) omitted.\n- Canonical planning evidence: scanned-empty; 0 candidate(s).\n- Sensitive-config scan coverage: complete; 10 of 10 candidate file(s) scanned, 0 skipped, 0 read error(s), truncated no.\n- Learning observation coverage: 2 episode record(s), 0 recurring candidate(s), 0 scoped Skill observation(s), and 0 unscoped Skill observation(s).\n  - Aggregated friction signals: source-warning:missing-optional-root: 5, source-warning:disabled-source-root: 1.\n  - Coverage boundary: Asset Coverage=checked-clean, Capture=not-evaluable-missing-normalized-events, Pattern Detection=insufficient-recurrence, Routing=not-evaluable-missing-invocation-events, Freshness=not-evaluable-missing-freshness-evidence, Application=not-evaluable-missing-application-events, Evolution=not-evaluable-missing-update-evidence, Effectiveness=pending-no-later-window, Memory Governance=not-evaluable-missing-memory-policy.\n- Workflow-demand observation: 0 current handoff(s) and 0 repeated candidate(s); candidate contents are not projected into this brief.\n  - Coverage boundary: Demand Signals=candidate-found, Current Handoff=checked-clean, Recurrence=insufficient-episodes, Skill Inventory=checked-clean, Skill Activation=checked-clean.\n\nSESSION AND TASK FACTS\nSession packet: 1 selected session(s), 2 retained candidate episode(s), and 1 discarded episode(s).\nUsage activity: 1 session(s) in the complete activity census.\nUsage census: analyzed 1 of 1 eligible sessions; complete yes; 0 active-long and 0 wall-only session(s); accounting effort-proxy.\n- Episode 1 (episode:465d8aa4064967be): session-start; 1 session(s); 1 change event(s) in 1 set(s); 0 validation event(s) in 0 set(s); closure unobserved; repair not-applicable; 273.4 seconds; 21 tool call(s); 65 retained event(s).\n- Episode 2 (episode:e31fd81ddc4a902a): progress-handoff; 1 session(s); 1 change event(s) in 1 set(s); 0 validation event(s) in 0 set(s); closure unobserved; repair not-applicable; 15.8 seconds; 1 tool call(s); 5 retained event(s).\n\nANALYZER OBSERVATIONS\n- Analyzed 1 of 1 sessions; 1/6 enabled source roots exist. Use this as the current workspace evidence boundary for final insight cards.\n- No validation command category was observed in the analyzed session sample. Inspect more sessions or add explicit validation guidance before claiming validation-after-edit behavior.\n- Observed 2 edit event(s), but no later validation command in the analyzed sample. Keep this as bounded sample context only; fewer than five project edit events is too small for a post-edit finding. (1 bounded evidence reference(s))\n- No strong execution friction signal in the analyzed sample. Keep friction claims narrow unless additional failed commands, rejected actions, or warnings are inspected.\n- Most observed tool: Read (10). Use this as workflow evidence, then inspect bounded sessions before claiming user intent. (1 bounded evidence reference(s))\n- The analysis covered 1 sessions: none met the active-long threshold. This activity describes effort only; token or credit evidence is incomplete and does not establish model preference, quality, or savings.\n\nDELIVERY EVIDENCE\nNo bounded evidence observed.\n\nINTERVENTION HISTORY\nNo bounded evidence observed.\n\nREVIEW BOUNDARIES\n- Source candidate: requires-review.\n- Repository review: requires-review; 2 framework(s), 9 repository check(s), and 5 Software Fluency capability review(s) remain in scope.\n- Score review: requires-review; 5 dimension(s) await AI judgment.\n- Session observation review: candidate; 6 observation card(s) from 1 analyzed session(s).",
+  "summaryFacts": {
+    "evidenceMode": "session-rich",
+    "evidenceBoundary": {
+      "manifest": {
+        "schemaVersion": 2,
+        "sourceFingerprint": "c493c13ef90f8a44",
+        "adapterVersion": "qoder-task-loop-source-v2",
+        "platform": "qoder",
+        "selection": {
+          "strategy": "all-eligible",
+          "eligibleCount": 1,
+          "analyzedCount": 1,
+          "confidence": "High"
+        }
+      },
+      "episodeCoverage": {
+        "episodeCount": 2,
+        "editedEpisodeCount": 2,
+        "closedEpisodeCount": 0,
+        "recoveredEpisodeCount": 0
+      },
+      "deliveryEvidenceLevels": [],
+      "sourceGaps": []
+    },
+    "semanticFacets": {
+      "schemaVersion": 1,
+      "status": "supplementary",
+      "entries": [
+        {
+          "id": "session-insight:source-coverage",
+          "kind": "redacted-summary",
+          "episodeRef": null,
+          "status": "candidate",
+          "labels": [
+            "source-coverage",
+            "High"
+          ],
+          "summary": "Analyzed 1 of 1 sessions; 1/6 enabled source roots exist. Use this as the current workspace evidence boundary for final insight cards.",
+          "evidenceRefs": [],
+          "modelVersion": "session-insights-v1"
+        },
+        {
+          "id": "session-insight:validation-behavior",
+          "kind": "redacted-summary",
+          "episodeRef": null,
+          "status": "candidate",
+          "labels": [
+            "validation-behavior",
+            "Low"
+          ],
+          "summary": "No validation command category was observed in the analyzed session sample. Inspect more sessions or add explicit validation guidance before claiming validation-after-edit behavior.",
+          "evidenceRefs": [],
+          "modelVersion": "session-insights-v1"
+        },
+        {
+          "id": "session-insight:post-edit-validation",
+          "kind": "rework-correction",
+          "episodeRef": null,
+          "status": "candidate",
+          "labels": [
+            "post-edit-validation",
+            "High"
+          ],
+          "summary": "Observed 2 edit event(s), but no later validation command in the analyzed sample. Keep this as bounded sample context only; fewer than five project edit events is too small for a post-edit finding.",
+          "evidenceRefs": [
+            {
+              "kind": "global-project-jsonl",
+              "id": "session-insight-3-1",
+              "type": "assistant",
+              "line": 70
+            }
+          ],
+          "modelVersion": "session-insights-v1"
+        },
+        {
+          "id": "session-insight:execution-friction",
+          "kind": "friction-taxonomy",
+          "episodeRef": null,
+          "status": "candidate",
+          "labels": [
+            "execution-friction",
+            "Low"
+          ],
+          "summary": "No strong execution friction signal in the analyzed sample. Keep friction claims narrow unless additional failed commands, rejected actions, or warnings are inspected.",
+          "evidenceRefs": [],
+          "modelVersion": "session-insights-v1"
+        },
+        {
+          "id": "session-insight:tool-mix",
+          "kind": "redacted-summary",
+          "episodeRef": null,
+          "status": "candidate",
+          "labels": [
+            "tool-mix",
+            "High"
+          ],
+          "summary": "Most observed tool: Read (10). Use this as workflow evidence, then inspect bounded sessions before claiming user intent.",
+          "evidenceRefs": [
+            {
+              "kind": "global-project-jsonl",
+              "id": "session-insight-5-1",
+              "type": "assistant",
+              "line": 11
+            }
+          ],
+          "modelVersion": "session-insights-v1"
+        },
+        {
+          "id": "session-insight:session-usage-efficiency",
+          "kind": "redacted-summary",
+          "episodeRef": null,
+          "status": "candidate",
+          "labels": [
+            "session-usage-efficiency",
+            "High"
+          ],
+          "summary": "The analysis covered 1 sessions: none met the active-long threshold. This activity describes effort only; token or credit evidence is incomplete and does not establish model preference, quality, or savings.",
+          "evidenceRefs": [],
+          "modelVersion": "session-insights-v1"
+        }
+      ]
+    },
+    "learningCapture": {
+      "schemaVersion": 1,
+      "state": "N/A",
+      "summary": "N/A — requires two comparable observation windows and an intervention comparison.",
+      "interventions": []
+    },
+    "aiAgentPractice": {
+      "inspectedSurfaces": [],
+      "coverageRows": [
+        {
+          "surface": "Rules",
+          "scopes": [
+            "Project"
+          ],
+          "count": 1,
+          "paths": [
+            "AGENTS.md"
+          ]
+        },
+        {
+          "surface": "Skills",
+          "scopes": [
+            "Global",
+            "Plugin"
+          ],
+          "count": 4,
+          "paths": [
+            "~/.agents/skills/find-skills/SKILL.md",
+            "~/.qoder/plugins/cache/qoder-bundler/better-harness/skills/better-harness/SKILL.md",
+            "~/.qoder/plugins/cache/qoder-bundler/qoder-create-plugin/skills/create-plugin/SKILL.md",
+            "~/.qoder/plugins/cache/qoder-marketplace/qmind/0.1.0/skills/qmind-knowledge/SKILL.md"
+          ]
+        },
+        {
+          "surface": "MCP",
+          "scopes": [
+            "Plugin"
+          ],
+          "count": 1,
+          "paths": [
+            "~/.qoder/plugins/cache/qoder-bundler/qoder-computer-use/mcp.json"
+          ]
+        },
+        {
+          "surface": "Workflows",
+          "scopes": [
+            "Project"
+          ],
+          "count": 2,
+          "paths": [
+            ".github/workflows/ci.yml",
+            ".github/workflows/deploy.yml"
+          ]
+        },
+        {
+          "surface": "Plugins",
+          "scopes": [
+            "Plugin"
+          ],
+          "count": 4,
+          "paths": [
+            "~/.qoder/plugins/cache/qoder-bundler/better-harness/.qoder-plugin/plugin.json",
+            "~/.qoder/plugins/cache/qoder-marketplace/qmind/0.1.0/.qoder-plugin/plugin.json",
+            "~/.qoder/plugins/cache/qoder-bundler/qoder-computer-use/.qoder-plugin/plugin.json",
+            "~/.qoder/plugins/cache/qoder-bundler/qoder-create-plugin"
+          ]
+        },
+        {
+          "surface": "Memories",
+          "scopes": [
+            "Project"
+          ],
+          "count": 20
+        },
+        {
+          "surface": "Hooks",
+          "scopes": [
+            "Project"
+          ],
+          "count": 0
+        },
+        {
+          "surface": "Commands",
+          "scopes": [
+            "Project"
+          ],
+          "count": 0
+        },
+        {
+          "surface": "Custom Agents",
+          "scopes": [
+            "Project"
+          ],
+          "count": 0
+        }
+      ],
+      "repositorySourceRows": [],
+      "memoryDetails": {
+        "contentPolicy": "metadata-only",
+        "scanState": "scanned-present",
+        "scopeCounts": [
+          {
+            "scope": "Project",
+            "count": 20
+          }
+        ],
+        "integrity": {
+          "status": "reviewed",
+          "titleCount": 20,
+          "reviewedTitleCount": 20,
+          "truncated": false,
+          "exactCollisionGroups": 0,
+          "similarityCandidates": 1
+        }
+      }
+    },
+    "usageActivity": {
+      "schemaVersion": 2,
+      "dateBasis": "UTC",
+      "measurementBasis": "session-starts-active-estimate-model-active-session-days-skill-invocations-and-loads",
+      "truncated": false,
+      "dates": [
+        "2026-08-16"
+      ],
+      "sessions": {
+        "total": 1,
+        "starts": [
+          1
+        ],
+        "activeMinutes": [
+          5.1
+        ]
+      },
+      "models": [],
+      "skills": []
+    },
+    "usageEfficiency": {
+      "schemaVersion": 2,
+      "selection": {
+        "strategy": "all-eligible",
+        "eligibleSessionCount": 1,
+        "analyzedSessionCount": 1,
+        "complete": true
+      },
+      "roles": {
+        "userThreadCandidateCount": 0,
+        "childAgentCandidateCount": 1
+      },
+      "longSessions": {
+        "activeCount": 0,
+        "wallOnlyCount": 0,
+        "longestActiveMinutes": 0,
+        "activeRatio": 0,
+        "estimate": {
+          "method": "capped-event-gap",
+          "activeThresholdMinutes": 45,
+          "gapCapMinutes": 5,
+          "idleGapMinutes": 30
+        },
+        "samples": []
+      },
+      "accounting": {
+        "mode": "effort-proxy",
+        "responseCount": 0,
+        "modelAttributedResponseCount": 0,
+        "unattributedResponseCount": 0,
+        "usageFieldObservedCount": 0,
+        "nonZeroUsageCount": 0,
+        "exactCreditsAvailable": false,
+        "pricingVersion": null
+      },
+      "modelUsage": [],
+      "outcomeReview": {
+        "status": "not-applicable",
+        "reviewedCandidateCount": 0,
+        "reviewedActiveLongCount": 0,
+        "comparableModelOutcomeEvidence": false,
+        "recommendation": "controlled-a-b-required"
+      }
+    }
+  },
+  "canvasPath": "/Users/mac/github.com/muhammadhabibullah/substansi-lpdp/.qoder/better-harness-runs/035510-substansi-lpdp/canvas.json",
+  "canvasReplaced": false
+}
