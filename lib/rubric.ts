@@ -2,8 +2,10 @@
  * lib/rubric.ts — the grading rubric (PLAN §5 is the spec; these tables must
  * match it exactly).
  *
- * Eight dimensions, each scored 1–4, weighted to a /100 total, then mapped onto
- * a recommendation band. All maths here is pure and unit-tested.
+ * Eight dimensions, each scored 0–4, weighted to a /100 total, then mapped onto
+ * a recommendation band. 0 is reserved for dimensions with nothing to grade
+ * (no transcript evidence and nothing in the candidate's documents).
+ * All maths here is pure and unit-tested.
  */
 
 import type {
@@ -41,8 +43,11 @@ export const DIMENSION_IDS: readonly DimensionId[] = RUBRIC.map((d) => d.id);
 
 export const TOTAL_WEIGHT = RUBRIC.reduce((sum, d) => sum + d.weight, 0);
 
+/** Lowest score a tested dimension can receive. */
 export const MIN_SCORE = 1;
 export const MAX_SCORE = 4;
+/** Absolute floor: 0 means there was nothing to grade at all. */
+export const UNSCORED = 0;
 
 export function getDimension(id: DimensionId): RubricDimension {
   const found = RUBRIC.find((dimension) => dimension.id === id);
@@ -54,7 +59,7 @@ export function isDimensionId(value: unknown): value is DimensionId {
   return typeof value === 'string' && DIMENSION_IDS.includes(value as DimensionId);
 }
 
-/** Coerce arbitrary model output into a valid 1–4 score. */
+/** Coerce arbitrary model output into a valid 0–4 score. */
 export function coerceScore(value: unknown): Score {
   const numeric =
     typeof value === 'number'
@@ -64,7 +69,7 @@ export function coerceScore(value: unknown): Score {
         : Number.NaN;
   if (!Number.isFinite(numeric)) return 2;
   const rounded = Math.round(numeric);
-  if (rounded < MIN_SCORE) return MIN_SCORE;
+  if (rounded < UNSCORED) return UNSCORED;
   if (rounded > MAX_SCORE) return MAX_SCORE;
   return rounded as Score;
 }
@@ -73,10 +78,11 @@ export function coerceScore(value: unknown): Score {
  * Weighted points a dimension contributes to the /100 total.
  *
  * A score of 1 is the floor, not zero: `(score - 1) / 3 * weight`. A candidate
- * scoring all 1s gets 0/100 and all 4s gets 100/100.
+ * scoring all 1s gets 0/100 and all 4s gets 100/100. A 0 (nothing to grade)
+ * likewise contributes zero points.
  */
 export function weightedPoints(score: Score, weight: number): number {
-  const normalized = (score - MIN_SCORE) / (MAX_SCORE - MIN_SCORE);
+  const normalized = Math.max(0, (score - MIN_SCORE) / (MAX_SCORE - MIN_SCORE));
   return normalized * weight;
 }
 
@@ -141,7 +147,8 @@ export interface RawDimensionScore {
 
 /**
  * Turn raw per-dimension scores into full results, filling any dimension the
- * model omitted with a neutral 2 so the total is always over all 8 dimensions.
+ * model omitted with the floor score of 1 (untested) so an omission never
+ * inflates the total with a neutral 2.
  */
 export function buildDimensionResults(
   raw: readonly RawDimensionScore[],
@@ -154,7 +161,7 @@ export function buildDimensionResults(
 
   return RUBRIC.map((dimension) => {
     const found = byId.get(dimension.id);
-    const score = found ? coerceScore(found.score) : (2 as Score);
+    const score = found ? coerceScore(found.score) : (MIN_SCORE as Score);
     return {
       id: dimension.id,
       score,

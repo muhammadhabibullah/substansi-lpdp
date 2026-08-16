@@ -52,9 +52,11 @@ penilaian berbasis rubrik dengan kutipan bukti dari jawaban Anda sendiri.
 | Nasionalisme & komitmen kembali ke Indonesia | 15 | Tim LPDP |
 | Rencana kontribusi: konkret & terukur | 15 | Tim LPDP |
 
-Skor 1–4 per dimensi, dibobot ke total 100, lalu dipetakan ke band: Sangat
+Skor 0–4 per dimensi, dibobot ke total 100, lalu dipetakan ke band: Sangat
 Direkomendasikan (≥85) · Direkomendasikan (≥70) · Dipertimbangkan (≥55) · Belum
-Direkomendasikan.
+Direkomendasikan. Dimensi yang tidak sempat teruji (misalnya sesi diakhiri
+dini) dinilai hanya dari dokumen Anda: skor 1 jika ada substansinya, 0 jika
+tidak ada — keduanya bernilai nol poin.
 
 Kriteria diturunkan dari [panduan publik LPDP tentang persiapan Seleksi
 Substansi](https://lpdp.kemenkeu.go.id/beasiswa/serba-serbi/ini-yang-perlu-disiapkan-untuk-hadapi-seleksi-substansi-lpdp).

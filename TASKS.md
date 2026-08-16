@@ -82,6 +82,7 @@ direction (2026-08-17); first task is voice input (P1-1).
 | P1-6 | Voice-first composer: voice input is the default mode and the transcript becomes editable once listening stops (supersedes P1-1's read-only rule per user feedback #2) | done |
 | P1-7 | Per-role time model: each role leads 15–20 min (Akademisi 15', Psikolog 20', Tim LPDP 15' + opening/closing) within the 60' total, follow-up interjections allowed in any phase, and "Unsur LPDP" renamed to "Tim LPDP" (user feedback #3) | done |
 | P1-8 | Strict session order: Akademisi (opening + study plan) → Psikolog (motivation + personality) → Tim LPDP (contribution + closing), each ~20' lead; other roles may still interject one short clarifying follow-up in another session (user feedback #4) | done |
+| P1-9 | Early-exit grading: dimensions the interview never reached are graded from the uploaded documents only — 1 if the documents contain substance, 0 if not — instead of a neutral 2; 0–4 scale (user feedback #5) | done |
 
 ## Known follow-ups (small, non-blocking)
 
@@ -99,6 +100,16 @@ direction (2026-08-17); first task is voice input (P1-1).
 ## Progress log
 
 <!-- Newest first. Format: YYYY-MM-DD · TASK-ID · what changed · notes for next session -->
+
+- 2026-08-17 · P1-9 · fix(grading): early-exit grading (user feedback #5).
+  `Score` is 0–4; untested dimensions (session ended early) are graded from
+  the uploaded documents only — the scoring prompt now receives fenced doc
+  excerpts (`renderGraderDocuments`, report screen passes `loadDocuments()`),
+  rule: 1 if the docs contain substance, 0 if not, never ≥2; both score 0 and
+  1 contribute zero weighted points. Omitted dimensions in
+  `buildDimensionResults` and the no-evidence case in `fallbackScores`
+  default 2 → 1. New `lib/report.test.ts` (8 tests; `pnpm test` 294 pass).
+  Gates: lint, typecheck, test, build.
 
 - 2026-08-17 · P1-8 · feat(panel): strict session order (user feedback #4).
   Phases reordered to Akademisi block (opening + studyPlan) → Psikolog block

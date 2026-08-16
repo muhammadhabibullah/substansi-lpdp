@@ -502,6 +502,7 @@ const id = {
     downloadMarkdown: 'Unduh Markdown',
     printPdf: 'Cetak / simpan PDF',
     scoreLabels: {
+      0: 'Tidak teruji',
       1: 'Kurang',
       2: 'Cukup',
       3: 'Baik',
@@ -1134,6 +1135,7 @@ const en: Copy = {
     downloadMarkdown: 'Download Markdown',
     printPdf: 'Print / save as PDF',
     scoreLabels: {
+      0: 'Untested',
       1: 'Poor',
       2: 'Fair',
       3: 'Good',

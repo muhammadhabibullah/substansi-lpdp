@@ -11,7 +11,6 @@ import {
   getDimension,
   isDimensionId,
   MAX_SCORE,
-  MIN_SCORE,
   RUBRIC,
   TOTAL_WEIGHT,
   totalScore,
@@ -89,8 +88,8 @@ describe('coerceScore', () => {
   });
 
   it('clamps out-of-range values', () => {
-    expect(coerceScore(0)).toBe(MIN_SCORE);
-    expect(coerceScore(-5)).toBe(MIN_SCORE);
+    expect(coerceScore(0)).toBe(0);
+    expect(coerceScore(-5)).toBe(0);
     expect(coerceScore(9)).toBe(MAX_SCORE);
   });
 
@@ -106,6 +105,11 @@ describe('weightedPoints', () => {
   it('treats 1 as the floor and 4 as full marks', () => {
     expect(weightedPoints(1, 20)).toBe(0);
     expect(weightedPoints(4, 20)).toBe(20);
+  });
+
+  it('gives an untested dimension (0) zero points too', () => {
+    expect(weightedPoints(0, 20)).toBe(0);
+    expect(weightedPoints(0, 15)).toBe(0);
   });
 
   it('spaces intermediate scores evenly', () => {
@@ -128,6 +132,10 @@ describe('totalScore', () => {
 
   it('gives 0/100 when every dimension is the floor', () => {
     expect(totalScore(allAt(1))).toBe(0);
+  });
+
+  it('gives 0/100 when every dimension was never tested', () => {
+    expect(totalScore(allAt(0))).toBe(0);
   });
 
   it('gives 100/100 when every dimension is full marks', () => {
@@ -165,7 +173,7 @@ describe('bandFor', () => {
 });
 
 describe('buildDimensionResults', () => {
-  it('fills omitted dimensions with a neutral score', () => {
+  it('fills omitted dimensions with the floor score', () => {
     const raw: RawDimensionScore[] = [
       { id: 'studyPlan', score: 4, justification: 'kuat' },
     ];
@@ -176,10 +184,11 @@ describe('buildDimensionResults', () => {
       score: 4,
       justification: 'kuat',
     });
-    // Every other dimension defaults to 2 with the fallback justification.
+    // Every other dimension defaults to 1 (untested floor), never a neutral 2.
     for (const result of results.filter((r) => r.id !== 'studyPlan')) {
-      expect(result.score).toBe(2);
+      expect(result.score).toBe(1);
       expect(result.justification).toBe('fallback');
+      expect(result.weighted).toBe(0);
     }
   });
 

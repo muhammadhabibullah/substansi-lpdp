@@ -175,8 +175,11 @@ export interface InterviewSession {
 
 export type BandId = 'sangat' | 'direkomendasikan' | 'dipertimbangkan' | 'belum';
 
-/** 1–4 per PLAN §5. */
-export type Score = 1 | 2 | 3 | 4;
+/**
+ * 0–4 (PLAN §5). 0 means there was nothing to grade — no evidence in the
+ * transcript nor in the candidate's documents (e.g. abandoned sessions).
+ */
+export type Score = 0 | 1 | 2 | 3 | 4;
 
 export interface DimensionResult {
   id: DimensionId;

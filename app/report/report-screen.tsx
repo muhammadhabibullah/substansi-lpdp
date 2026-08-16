@@ -35,6 +35,7 @@ import { generateReport, type ReportStep } from '@/lib/report';
 import { bandTone, getDimension } from '@/lib/rubric';
 import {
   deleteReport,
+  loadDocuments,
   loadReports,
   loadSession,
   saveSession,
@@ -85,6 +86,9 @@ export function ReportScreen() {
         session,
         settings,
         locale,
+        // Dimensions the interview never reached (early exit) are still
+        // graded from the uploaded documents.
+        documents: loadDocuments(),
         signal: controller.signal,
         onStep: (step, index, total) =>
           setState({ status: 'generating', step, index, total }),

@@ -127,7 +127,9 @@ lib/
 
 ## 5. Grading system
 
-Score 1–4 per dimension (mirroring "unsur penilaian" style), weighted to 100:
+Score 0–4 per dimension (mirroring "unsur penilaian" style), weighted to 100.
+0 is reserved for dimensions with nothing to grade — no evidence in the
+transcript and nothing in the candidate's documents.
 
 | Dimension | Weight | Owner |
 |---|---|---|
@@ -139,6 +141,11 @@ Score 1–4 per dimension (mirroring "unsur penilaian" style), weighted to 100:
 | Konsistensi jawaban vs dokumen | 10 | Psikolog |
 | Nasionalisme & komitmen kembali ke Indonesia | 15 | Tim LPDP |
 | Rencana kontribusi: konkret & terukur | 15 | Tim LPDP |
+
+Dimensions the interview never reached (e.g. the candidate ended the session
+early) are graded from the uploaded documents only: 1 if the documents contain
+relevant substance for the dimension, 0 if there is nothing to grade. Both
+contribute zero weighted points — an abandoned session never earns a neutral 2.
 
 Report contents:
 - **Total score /100 + band**: Sangat Direkomendasikan / Direkomendasikan / Dipertimbangkan / Belum Direkomendasikan
