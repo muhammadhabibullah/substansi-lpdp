@@ -1,9 +1,14 @@
 name: Deploy to GitHub Pages
 
 on:
-  push:
+  # Deploy only after the CI workflow succeeds on main, so only validated
+  # changes reach production.
+  workflow_run:
+    workflows: ["CI"]
     branches: [main]
-  # Allow a manual redeploy from the Actions tab.
+    types: [completed]
+  # Allow a manual redeploy from the Actions tab (emergency redeploy,
+  # independent of CI).
   workflow_dispatch:
 
 permissions:
@@ -20,6 +25,11 @@ jobs:
   build:
     name: Build static export
     runs-on: ubuntu-latest
+    # For workflow_run triggers, require a successful CI run; always allow
+    # manual workflow_dispatch redeploys.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
 
     steps:
       - name: Checkout
