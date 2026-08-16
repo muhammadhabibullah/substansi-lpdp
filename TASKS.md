@@ -153,3 +153,9 @@ needs user direction before starting.
   verified absent from source and `out/`). Added a `@media print` rule hiding
   any non-landmark `<body>` children so dev-tools/preview widgets never reach
   the downloaded PDF; production static export was never affected.
+- 2026-08-17 · ad-hoc · fix(panel): note-taker warning ("Catatan penilaian...
+  gagal dibuat") popped up after every answer because the cheap-tier call
+  failed consistently (truncated JSON at maxTokens 500 on reasoning models,
+  invalid cheap model id, or weak JSON compliance). `annotateAnswer` now uses a
+  1500-token budget and falls back to the main model before returning null;
+  added `lib/panel/notetaker.test.ts` (5 tests).

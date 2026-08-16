@@ -10,7 +10,7 @@
  * simply carries on.
  */
 
-import { completeJson, type CoreMessage } from '../llm';
+import { completeJson, toLlmError, type CoreMessage } from '../llm';
 import { DIMENSION_IDS, isDimensionId } from '../rubric';
 import type {
   AnswerNote,
@@ -131,9 +131,17 @@ function parseNote(value: unknown, context: NoteTakerContext): AnswerNote {
 const MIN_ANSWER_CHARS = 40;
 
 /**
- * Annotate one candidate answer. Returns `null` when the answer is too short to
- * be worth scoring or when the model call fails — the interview must continue
- * regardless.
+ * Token budget for one annotation. Generous on purpose: reasoning models
+ * (`gpt-5*`, `o*`) charge their thinking against `max_completion_tokens`, so a
+ * tight budget truncates the JSON and makes every annotation fail.
+ */
+const NOTE_MAX_TOKENS = 1500;
+
+/**
+ * Annotate one candidate answer. Tries the cheap model first and falls back to
+ * the main model when the cheap call fails (bad model id, weak JSON
+ * compliance, truncation), returning `null` only when both do — the interview
+ * must continue regardless.
  */
 export async function annotateAnswer(
   context: NoteTakerContext,
@@ -152,15 +160,34 @@ export async function annotateAnswer(
     };
   }
 
+  const messages = buildMessages(context);
+  const validate = (value: unknown) => parseNote(value, context);
+
   try {
     return await completeJson({
       settings,
-      messages: buildMessages(context),
+      messages,
       tier: 'cheap',
       temperature: 0.2,
-      maxTokens: 500,
+      maxTokens: NOTE_MAX_TOKENS,
       signal,
-      validate: (value) => parseNote(value, context),
+      validate,
+    });
+  } catch (error) {
+    // An intentional cancel stays silent; anything else earns one retry on the
+    // main model, which is the one already proven to work during the session.
+    if (toLlmError(error).kind === 'aborted') return null;
+  }
+
+  try {
+    return await completeJson({
+      settings,
+      messages,
+      tier: 'main',
+      temperature: 0.2,
+      maxTokens: NOTE_MAX_TOKENS,
+      signal,
+      validate,
     });
   } catch {
     // Silent by design: the UI shows a soft warning, grading degrades slightly.
