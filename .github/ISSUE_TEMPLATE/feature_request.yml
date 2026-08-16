@@ -1,0 +1,42 @@
+name: ✨ Feature request / Usulan fitur
+description: Usulkan perbaikan atau fitur baru / Suggest an improvement
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Sebelum mengusulkan, mohon cek [`PLAN.md`](../blob/main/PLAN.md) dan
+        [`TASKS.md`](../blob/main/TASKS.md) — mungkin sudah direncanakan.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Masalah yang ingin diselesaikan / Problem to solve
+      description: Fokus pada masalah pengguna, bukan solusinya dulu.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Usulan solusi / Proposed solution
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatif yang dipertimbangkan / Alternatives considered
+
+  - type: checkboxes
+    id: constraints
+    attributes:
+      label: Kesesuaian dengan batasan proyek / Fits project constraints
+      description: Usulan harus tetap memenuhi batasan keras proyek.
+      options:
+        - label: Tetap bisa berjalan sebagai aplikasi statis (tanpa server, tanpa API route).
+          required: true
+        - label: Tidak memerlukan kunci API bersama yang disimpan di repo/bundle.
+          required: true
+        - label: Tidak mengirim dokumen/transkrip ke pihak selain endpoint LLM pilihan pengguna.
+          required: true

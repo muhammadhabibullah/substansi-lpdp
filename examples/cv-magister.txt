@@ -1,0 +1,66 @@
+CURRICULUM VITAE
+(DOKUMEN CONTOH FIKTIF — bukan data orang sungguhan)
+
+DATA PRIBADI
+Nama            : Sri Wahyuni
+Tempat/Tgl Lahir: Bantul, 14 Maret 1997
+Domisili        : Bantul, Daerah Istimewa Yogyakarta
+Email           : sri.wahyuni.contoh@example.com
+
+RINGKASAN
+Sarjana Kesehatan Masyarakat dengan pengalaman 3 tahun di bidang surveilans
+penyakit menular di tingkat kabupaten. Terlibat dalam penanganan wabah demam
+berdarah dengue (DBD) 2022 dan 2023 di Kabupaten Bantul. Tertarik pada pemodelan
+epidemiologi dan sistem peringatan dini berbasis data.
+
+PENDIDIKAN
+2015 - 2019  S1 Kesehatan Masyarakat, Universitas Gadjah Mada
+             Peminatan: Epidemiologi dan Biostatistik
+             IPK 3,62 / 4,00
+             Skripsi: "Hubungan Kepadatan Larva Aedes aegypti dengan Insidensi
+             DBD di Kecamatan Sewon, Bantul (2018)"
+
+PENGALAMAN KERJA
+2021 - sekarang  Staf Surveilans, Dinas Kesehatan Kabupaten Bantul
+  - Mengelola pelaporan mingguan Sistem Kewaspadaan Dini dan Respons (SKDR)
+    dari 27 puskesmas.
+  - Melakukan verifikasi dan investigasi laporan kasus DBD, leptospirosis, dan
+    campak.
+  - Menyusun laporan situasi bulanan untuk kepala dinas.
+  - Selama wabah DBD 2022, mengoordinasi tim penyelidikan epidemiologi lapangan
+    yang beranggotakan 6 orang selama 8 minggu.
+
+2019 - 2021  Enumerator dan Asisten Peneliti, Pusat Kebijakan Kesehatan (proyek)
+  - Mengumpulkan data survei rumah tangga di 4 kabupaten (±1.200 responden).
+  - Melakukan pembersihan dan entri data menggunakan STATA.
+
+ORGANISASI DAN KEPEMIMPINAN
+2017 - 2018  Ketua Divisi Pengabdian Masyarakat, BEM Fakultas Kesehatan
+             Masyarakat UGM. Mengelola program penyuluhan kesehatan di 3 desa
+             dengan 40 relawan mahasiswa.
+2016 - 2017  Anggota tim kaderisasi, Himpunan Mahasiswa Epidemiologi.
+
+PUBLIKASI DAN PRESENTASI
+- Wahyuni, S., dkk. (2023). "Gambaran Spasial Kasus DBD di Kabupaten Bantul
+  Tahun 2019-2022". Prosiding Seminar Nasional Kesehatan Masyarakat (poster).
+- Presentasi oral internal Dinas Kesehatan: "Evaluasi Ketepatan Waktu Pelaporan
+  SKDR Puskesmas" (2023).
+
+PELATIHAN
+2023  Pelatihan Field Epidemiology Training Program (FETP) tingkat dasar,
+      Kementerian Kesehatan (2 minggu).
+2022  Pelatihan analisis data kesehatan dengan R, daring (40 jam).
+2021  Pelatihan Penyelidikan Epidemiologi, Dinas Kesehatan DIY.
+
+KEMAMPUAN
+Teknis  : STATA, R (dasar-menengah), Excel lanjutan, QGIS (dasar), SPSS
+Bahasa  : Indonesia (ibu), Jawa (aktif), Inggris (IELTS 6.5, 2024)
+Lainnya : Investigasi wabah, manajemen data surveilans, penulisan laporan teknis
+
+PENGHARGAAN
+2023  Pegawai berkinerja terbaik triwulan III, Dinas Kesehatan Kab. Bantul.
+2018  Juara 2 lomba poster ilmiah tingkat fakultas.
+
+KEGIATAN SUKARELA
+2020 - 2021  Relawan pelacakan kontak COVID-19, Satgas COVID-19 Bantul.
+             Melakukan pelacakan kontak untuk lebih dari 300 kasus.

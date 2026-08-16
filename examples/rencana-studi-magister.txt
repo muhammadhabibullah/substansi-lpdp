@@ -1,0 +1,110 @@
+RENCANA STUDI
+(DOKUMEN CONTOH FIKTIF)
+
+Nama            : Sri Wahyuni
+Jenjang         : Magister (S2)
+Universitas     : University of Melbourne, Australia
+Program Studi   : Master of Public Health (Epidemiology stream)
+Durasi          : 2 tahun (4 semester), rencana mulai Februari 2026
+
+A. LATAR BELAKANG PEMILIHAN PROGRAM
+
+Selama tiga tahun bekerja sebagai staf surveilans di Dinas Kesehatan Kabupaten
+Bantul, saya melihat pola yang berulang: data kasus demam berdarah dengue (DBD)
+dari 27 puskesmas terkumpul cukup rapi, tetapi hampir selalu dipakai secara
+retrospektif. Kami tahu ada lonjakan setelah lonjakan itu terjadi. Pada wabah
+2022, tim kami baru bergerak pada minggu ketiga setelah peningkatan kasus
+sebenarnya dimulai.
+
+Saya ingin memperbaiki jarak antara "data tersedia" dan "keputusan diambil".
+Untuk itu saya perlu kemampuan yang belum saya miliki: pemodelan epidemiologi
+kuantitatif, analisis data spasial-temporal, dan evaluasi sistem surveilans
+secara formal.
+
+B. MENGAPA UNIVERSITY OF MELBOURNE
+
+1. Melbourne School of Population and Global Health memiliki jalur Epidemiology
+   yang menyediakan mata kuliah pemodelan penyakit menular, bukan hanya
+   epidemiologi deskriptif.
+2. Terdapat kelompok riset pemodelan penyakit menular yang berfokus pada
+   penyakit tular vektor di kawasan Asia-Pasifik, konteks yang relevan langsung
+   dengan Indonesia.
+3. Program ini menyediakan komponen capstone/riset terapan, sehingga saya dapat
+   mengerjakan proyek yang memakai data surveilans nyata.
+4. Australia memiliki kedekatan geografis dan kemitraan kesehatan yang aktif
+   dengan Indonesia, memudahkan kolaborasi setelah saya lulus.
+
+Saya juga mempertimbangkan program serupa di University of Sydney dan London
+School of Hygiene & Tropical Medicine. Melbourne saya pilih karena kombinasi
+mata kuliah pemodelan yang lebih kuat pada tahun pertama dan adanya opsi
+capstone terapan.
+
+C. RENCANA MATA KULIAH
+
+Semester 1
+- Principles of Epidemiology
+- Biostatistics
+- Public Health Practice
+Alasan: menyamakan fondasi metodologis dan memperkuat statistik saya, yang
+selama ini lebih banyak dipelajari lewat pelatihan singkat daripada kelas formal.
+
+Semester 2
+- Infectious Disease Epidemiology
+- Mathematical Modelling of Infectious Diseases
+- Spatial Analysis for Public Health
+Alasan: inti dari kemampuan yang saya cari. Pemodelan matematis diperlukan untuk
+memproyeksikan lonjakan kasus, dan analisis spasial untuk menentukan wilayah
+prioritas intervensi.
+
+Semester 3
+- Surveillance Systems and Outbreak Investigation
+- Health Program Evaluation
+- Elective: Data Visualisation for Public Health
+Alasan: menghubungkan kemampuan analitis dengan penilaian sistem surveilans dan
+komunikasi hasil kepada pengambil keputusan.
+
+Semester 4
+- Capstone / Applied Research Project
+Rencana topik: pengembangan dan evaluasi model peringatan dini DBD berbasis data
+surveilans mingguan dan variabel iklim untuk kabupaten di Daerah Istimewa
+Yogyakarta.
+
+D. RENCANA PROYEK CAPSTONE
+
+Pertanyaan penelitian: sejauh mana model peringatan dini berbasis data
+surveilans mingguan dan variabel curah hujan dapat mendeteksi lonjakan kasus DBD
+di tingkat kecamatan lebih awal dibandingkan praktik pelaporan saat ini?
+
+Data: data kasus DBD mingguan 2015-2025 dari Dinas Kesehatan Kabupaten Bantul
+(saya sudah berdiskusi awal dengan atasan saya mengenai kemungkinan akses data
+agregat dengan izin resmi), serta data curah hujan BMKG.
+
+Metode: model regresi deret waktu dengan variabel iklim berlag, dibandingkan
+dengan pendekatan ambang batas (threshold) yang sekarang dipakai. Evaluasi
+dengan sensitivitas, spesifisitas, dan waktu deteksi dini.
+
+Keterbatasan yang saya sadari: kualitas data pelaporan bervariasi antar
+puskesmas, dan model kabupaten tunggal belum tentu bisa digeneralisasi. Karena
+itu saya berencana melakukan analisis sensitivitas terhadap keterlambatan
+pelaporan.
+
+E. RENCANA WAKTU
+
+Bulan 1-3    : penyesuaian akademik, memperkuat dasar statistik dan R.
+Bulan 4-12   : mata kuliah inti, mulai menyiapkan izin dan perjanjian data.
+Bulan 13-18  : mata kuliah lanjutan, analisis awal data historis.
+Bulan 19-24  : penyelesaian capstone, penulisan, dan diseminasi hasil.
+
+F. PERSIAPAN YANG SUDAH DILAKUKAN
+
+- IELTS 6.5 (2024), memenuhi syarat minimum program.
+- Menyelesaikan pelatihan FETP dasar Kementerian Kesehatan (2023).
+- Mengikuti kursus daring analisis data dengan R (40 jam, 2022).
+- Berdiskusi dengan dua alumni program yang sama untuk memahami beban studi.
+
+G. TANTANGAN YANG DIANTISIPASI
+
+Beban matematis mata kuliah pemodelan lebih berat daripada latar belakang S1
+saya. Untuk itu saya sedang mengulang materi kalkulus dan aljabar linear dasar
+secara mandiri, dan berencana memanfaatkan jam konsultasi dosen sejak awal
+semester alih-alih menunggu kesulitan menumpuk.

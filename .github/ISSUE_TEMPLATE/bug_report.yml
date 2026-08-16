@@ -1,0 +1,79 @@
+name: 🐞 Bug report / Laporan bug
+description: Laporkan sesuatu yang tidak berfungsi / Report something broken
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Terima kasih sudah melaporkan! / Thanks for reporting!
+
+        ⚠️ **Jangan pernah menempelkan kunci API Anda** di isu ini —
+        **never paste your API key** here, including inside logs or screenshots.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: Apa yang terjadi? / What happened?
+      description: Jelaskan bug-nya secara singkat.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Yang diharapkan / Expected behaviour
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Langkah reproduksi / Steps to reproduce
+      placeholder: |
+        1. Buka halaman Persiapan
+        2. Unggah CV berupa PDF
+        3. ...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: page
+    attributes:
+      label: Halaman terkait / Affected page
+      multiple: true
+      options:
+        - Beranda / Landing
+        - Persiapan / Setup
+        - Wawancara / Interview
+        - Laporan / Report
+        - Pengaturan / Settings
+        - Privasi / Privacy
+        - Lainnya / Other
+
+  - type: input
+    id: provider
+    attributes:
+      label: Penyedia & model LLM / LLM provider & model
+      description: Misalnya "OpenAI / gpt-5-mini" atau "Ollama / llama3.1:8b". Jangan sertakan kunci.
+      placeholder: OpenAI / gpt-5-mini
+
+  - type: input
+    id: browser
+    attributes:
+      label: Browser & OS
+      placeholder: Chrome 131 / macOS 15
+
+  - type: textarea
+    id: console
+    attributes:
+      label: Pesan error di console / Console errors
+      description: Sensor bagian yang sensitif sebelum menempel.
+      render: text
+
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Konfirmasi / Confirmation
+      options:
+        - label: Saya tidak menyertakan kunci API atau data pribadi dalam laporan ini.
+          required: true

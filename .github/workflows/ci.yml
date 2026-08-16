@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel superseded runs on the same ref.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Lint, typecheck, test, build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      # No live API key is ever required: tests cover pure logic and prompt
+      # construction only (AGENTS.md testing guidance).
+      - name: Unit tests
+        run: pnpm test
+
+      - name: Build (static export)
+        run: pnpm build
+
+      - name: Assert the export is fully static
+        run: |
+          test -f out/index.html
+          test -f out/setup/index.html
+          test -f out/interview/index.html
+          test -f out/report/index.html
+          test -f out/settings/index.html
+          test -f out/privacy/index.html
+          test -f out/pdf.worker.min.mjs
+          echo "Static export verified."
+
+      - name: Assert no API keys were committed or bundled
+        run: |
+          # Hard constraint #2: no key may appear in the repo or the bundle.
+          if grep -rEn "sk-[A-Za-z0-9]{20,}" out/ app/ lib/ components/ hooks/ 2>/dev/null; then
+            echo "::error::A string resembling an API key was found."
+            exit 1
+          fi
+          echo "No API key patterns found."

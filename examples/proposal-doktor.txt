@@ -1,0 +1,142 @@
+PROPOSAL PENELITIAN DOKTOR
+(DOKUMEN CONTOH FIKTIF)
+
+Nama          : Sri Wahyuni
+Jenjang       : Doktor (S3)
+Universitas   : Universitas Gadjah Mada
+Program Studi : Doktor Ilmu Kedokteran dan Kesehatan
+Bidang        : Epidemiologi penyakit menular
+
+JUDUL
+Pengembangan dan Evaluasi Sistem Peringatan Dini Demam Berdarah Dengue Berbasis
+Integrasi Data Surveilans, Iklim, dan Mobilitas di Daerah Istimewa Yogyakarta
+
+A. LATAR BELAKANG
+
+Demam berdarah dengue (DBD) tetap menjadi masalah kesehatan masyarakat endemis
+di Indonesia dengan pola lonjakan musiman yang berulang. Meskipun data
+surveilans mingguan dikumpulkan secara rutin melalui Sistem Kewaspadaan Dini dan
+Respons (SKDR), pemanfaatannya masih dominan retrospektif. Respons intervensi
+umumnya bergerak setelah ambang batas kasus terlampaui, sehingga kehilangan
+jendela waktu pencegahan yang paling efektif.
+
+Sejumlah studi internasional menunjukkan bahwa penggabungan data surveilans
+dengan variabel iklim berlag (curah hujan, suhu, kelembaban) dapat memproyeksikan
+lonjakan kasus DBD beberapa minggu di muka. Namun, penerapannya di tingkat
+kabupaten di Indonesia menghadapi tiga persoalan yang belum banyak diteliti:
+kualitas dan keterlambatan pelaporan yang bervariasi antar fasilitas, heterogenitas
+spasial pada skala kecamatan, dan pengaruh mobilitas penduduk antar wilayah.
+
+B. RUMUSAN MASALAH
+
+1. Bagaimana karakteristik keterlambatan dan kelengkapan pelaporan surveilans DBD
+   di tingkat kecamatan di DIY, dan bagaimana pengaruhnya terhadap kinerja model
+   prediksi?
+2. Sejauh mana integrasi variabel iklim dan proksi mobilitas penduduk meningkatkan
+   akurasi prediksi lonjakan kasus DBD dibandingkan model berbasis data surveilans
+   saja?
+3. Apakah sistem peringatan dini yang dihasilkan layak diterapkan secara
+   operasional dalam alur kerja dinas kesehatan kabupaten?
+
+C. TUJUAN PENELITIAN
+
+Tujuan umum: mengembangkan dan mengevaluasi sistem peringatan dini DBD yang
+layak secara metodologis dan operasional pada tingkat kabupaten di DIY.
+
+Tujuan khusus:
+1. Mengkarakterisasi kualitas data surveilans DBD 2015-2025 di lima
+   kabupaten/kota DIY.
+2. Membangun model prediksi lonjakan kasus dengan integrasi data iklim dan
+   mobilitas.
+3. Mengevaluasi kinerja prediktif model secara prospektif selama satu musim
+   penularan.
+4. Menilai kelayakan penerapan melalui studi kasus implementasi di satu
+   kabupaten.
+
+D. TINJAUAN PUSTAKA SINGKAT
+
+Kerangka penelitian ini berpijak pada tiga badan literatur. Pertama, literatur
+pemodelan penyakit tular vektor yang menghubungkan variabel iklim dengan dinamika
+populasi vektor. Kedua, literatur evaluasi sistem surveilans yang menekankan
+atribut ketepatan waktu, kelengkapan, dan kegunaan. Ketiga, literatur
+implementation science yang menyoroti kesenjangan antara model yang akurat secara
+statistik dan model yang benar-benar dipakai oleh pengambil keputusan.
+
+Celah yang saya identifikasi: sebagian besar studi prediksi DBD di Indonesia
+berhenti pada evaluasi retrospektif dan tidak menguji kelayakan operasional.
+
+E. METODE PENELITIAN
+
+Desain: penelitian bertahap (mixed methods) dalam empat studi.
+
+Studi 1 — Analisis kualitas data (retrospektif, kuantitatif)
+Data: rekapitulasi kasus DBD mingguan tingkat kecamatan 2015-2025 dari Dinas
+Kesehatan lima kabupaten/kota DIY (data agregat, tanpa identitas individu).
+Analisis: deskripsi keterlambatan pelaporan, kelengkapan, dan konsistensi;
+pemetaan variasi antar wilayah.
+
+Studi 2 — Pengembangan model (kuantitatif)
+Variabel prediktor: kasus historis berlag, curah hujan dan suhu (BMKG) dengan
+lag 4-12 minggu, serta proksi mobilitas berbasis data agregat perjalanan
+antar kecamatan.
+Pendekatan: model deret waktu hierarkis (misalnya INLA/Bayesian spatiotemporal),
+dibandingkan dengan model ambang batas endemis yang dipakai saat ini dan model
+regresi Poisson sederhana sebagai pembanding.
+Validasi: pembagian data temporal (rolling-origin), metrik yang dipakai meliputi
+sensitivitas deteksi lonjakan, spesifisitas, dan lead time deteksi.
+
+Studi 3 — Evaluasi prospektif
+Model terbaik dijalankan secara paralel dengan sistem yang berlaku selama satu
+musim penularan (±12 bulan), tanpa mengganti prosedur resmi. Kinerja dinilai
+terhadap kejadian nyata.
+
+Studi 4 — Studi kelayakan implementasi (kualitatif)
+Wawancara mendalam dengan pengelola program dan staf surveilans (perkiraan 15-20
+informan) serta observasi rapat surveilans, untuk menilai keterpakaian keluaran
+model, beban kerja tambahan, dan syarat kelembagaan.
+
+F. ETIKA PENELITIAN
+
+Penelitian memakai data agregat tanpa identitas individu. Persetujuan etik akan
+diajukan ke Komisi Etik Fakultas Kedokteran, Kesehatan Masyarakat, dan
+Keperawatan UGM. Izin penggunaan data akan diperoleh dari masing-masing dinas
+kesehatan. Untuk komponen kualitatif, informed consent tertulis akan diperoleh
+dari setiap informan.
+
+G. LUARAN YANG DIHARAPKAN
+
+1. Tiga artikel pada jurnal internasional terindeks (kualitas data, model
+   prediksi, kelayakan implementasi).
+2. Prototipe dasbor peringatan dini yang dapat dioperasikan dinas kesehatan.
+3. Rekomendasi kebijakan untuk Dinas Kesehatan DIY dan Kementerian Kesehatan.
+
+H. JADWAL (4 TAHUN)
+
+Tahun 1 : penguatan metodologi, penyusunan proposal detail, izin etik dan data,
+          pelaksanaan Studi 1.
+Tahun 2 : pengembangan dan validasi retrospektif model (Studi 2).
+Tahun 3 : evaluasi prospektif (Studi 3) dan pengumpulan data kualitatif awal.
+Tahun 4 : Studi 4, penulisan disertasi, diseminasi.
+
+I. RISIKO DAN MITIGASI
+
+Risiko 1: akses data mobilitas terbatas. Mitigasi: menyiapkan model alternatif
+tanpa variabel mobilitas sebagai analisis utama, dengan mobilitas sebagai
+analisis tambahan bila data tersedia.
+
+Risiko 2: kualitas data historis terlalu buruk pada sebagian wilayah. Mitigasi:
+kriteria inklusi wilayah berdasarkan kelengkapan minimum, disertai analisis
+sensitivitas.
+
+Risiko 3: musim penularan atipikal selama evaluasi prospektif. Mitigasi:
+memperpanjang jendela observasi dan melaporkan hasil secara kontekstual, bukan
+sebagai klaim generalisasi.
+
+J. KESIAPAN PENELITI
+
+Saya memiliki pengalaman tiga tahun mengelola data surveilans di tingkat
+kabupaten, termasuk memimpin tim penyelidikan epidemiologi selama wabah 2022.
+Saya juga telah menyelesaikan pelatihan FETP dasar dan pelatihan analisis data
+dengan R. Kelemahan yang saya sadari adalah kedalaman statistik Bayesian, yang
+akan saya perkuat melalui mata kuliah tahun pertama dan kolaborasi dengan
+kelompok biostatistik.
