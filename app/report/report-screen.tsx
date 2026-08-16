@@ -1,0 +1,632 @@
+'use client';
+
+import * as React from 'react';
+import Link from 'next/link';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  CircleDashed,
+  Download,
+  Loader2,
+  MinusCircle,
+  Printer,
+  RotateCcw,
+} from 'lucide-react';
+
+import { Disclaimer } from '@/components/disclaimer';
+import { useI18n } from '@/components/i18n-provider';
+import { PanelistAvatar } from '@/components/panelist-avatar';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { useSettings } from '@/hooks/use-app-state';
+import { downloadMarkdown } from '@/lib/export-markdown';
+import { toLlmError, type LlmError } from '@/lib/llm';
+import { generateReport, type ReportStep } from '@/lib/report';
+import { bandTone, getDimension } from '@/lib/rubric';
+import {
+  clearSession,
+  loadReport,
+  loadSession,
+  saveReport,
+  saveSession,
+} from '@/lib/storage';
+import type { PanelistId, Report, SignalCheck, SignalVerdict } from '@/lib/types';
+import { cn, formatClock, formatDateTime, formatDuration } from '@/lib/utils';
+
+type State =
+  | { status: 'loading' }
+  | { status: 'empty' }
+  | { status: 'generating'; step: ReportStep; index: number; total: number }
+  | { status: 'ready'; report: Report }
+  | { status: 'failed'; error: LlmError };
+
+export function ReportScreen() {
+  const { c, f, locale } = useI18n();
+  const { settings, hydrated } = useSettings();
+  const [state, setState] = React.useState<State>({ status: 'loading' });
+  const startedRef = React.useRef(false);
+  const abortRef = React.useRef<AbortController | null>(null);
+
+  const build = React.useCallback(async () => {
+    const session = loadSession();
+    if (!session || session.turns.length === 0) {
+      setState({ status: 'empty' });
+      return;
+    }
+
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    setState({ status: 'generating', step: 'scoring', index: 1, total: 3 });
+    try {
+      const report = await generateReport({
+        session,
+        settings,
+        locale,
+        signal: controller.signal,
+        onStep: (step, index, total) =>
+          setState({ status: 'generating', step, index, total }),
+      });
+      saveReport(report);
+      // Mark the session finished so we do not re-grade it on every visit.
+      saveSession({ ...session, status: 'finished', finishedAt: Date.now() });
+      setState({ status: 'ready', report });
+    } catch (error) {
+      const llmError = toLlmError(error);
+      if (llmError.kind === 'aborted') return;
+      setState({ status: 'failed', error: llmError });
+    }
+  }, [locale, settings]);
+
+  // On mount: show a stored report, or grade the just-finished session.
+  React.useEffect(() => {
+    if (!hydrated || startedRef.current) return;
+    startedRef.current = true;
+
+    const stored = loadReport();
+    const session = loadSession();
+
+    if (
+      stored &&
+      (!session || session.id === stored.sessionId || session.status === 'finished')
+    ) {
+      setState({ status: 'ready', report: stored });
+      return;
+    }
+    if (session && session.turns.length > 0) {
+      void build();
+      return;
+    }
+    setState({ status: 'empty' });
+  }, [build, hydrated]);
+
+  React.useEffect(
+    () => () => {
+      abortRef.current?.abort();
+    },
+    [],
+  );
+
+  const stepLabels: Record<ReportStep, string> = {
+    scoring: c.report.stepScoring,
+    narrative: c.report.stepNarrative,
+    signals: c.report.stepSignals,
+  };
+
+  if (state.status === 'loading') {
+    return (
+      <div className="container max-w-2xl py-16 text-center">
+        <Loader2 aria-hidden className="mx-auto size-6 animate-spin text-primary" />
+        <p className="mt-3 text-sm text-muted-foreground">{c.common.loading}</p>
+      </div>
+    );
+  }
+
+  if (state.status === 'empty') {
+    return (
+      <div className="container max-w-2xl py-16">
+        <Card>
+          <CardHeader>
+            <CardTitle>{c.report.noReportTitle}</CardTitle>
+            <CardDescription>{c.report.noReportBody}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild>
+              <Link href="/setup">{c.report.noReportCta}</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (state.status === 'generating') {
+    return (
+      <div className="container max-w-2xl py-16 text-center">
+        <Loader2 aria-hidden className="mx-auto size-8 animate-spin text-primary" />
+        <h1 className="mt-4 text-xl font-semibold">{c.report.generating}</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          {f(c.report.generatingStep, {
+            step: state.index,
+            total: state.total,
+            label: stepLabels[state.step],
+          })}
+        </p>
+        <Progress
+          value={(state.index / state.total) * 100}
+          className="mx-auto mt-6 max-w-sm"
+        />
+      </div>
+    );
+  }
+
+  if (state.status === 'failed') {
+    return (
+      <div className="container max-w-2xl py-16">
+        <Alert variant="destructive">
+          <AlertTriangle aria-hidden />
+          <AlertTitle>{c.report.generateFailed}</AlertTitle>
+          <AlertDescription>
+            <p>{state.error.message}</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Button size="sm" variant="secondary" onClick={() => void build()}>
+                <RotateCcw aria-hidden />
+                {c.report.regenerate}
+              </Button>
+              <Button asChild size="sm" variant="outline">
+                <Link href="/settings">{c.errors.missingSettingsCta}</Link>
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  const { report } = state;
+
+  return (
+    <div className="container max-w-4xl py-10">
+      {/* Actions — hidden when printing */}
+      <div className="no-print mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">{c.report.title}</h1>
+          <p className="mt-1 text-sm text-muted-foreground">{c.report.subtitle}</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => downloadMarkdown(report, locale)}>
+            <Download aria-hidden />
+            {c.report.downloadMarkdown}
+          </Button>
+          <Button variant="outline" onClick={() => window.print()}>
+            <Printer aria-hidden />
+            {c.report.printPdf}
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={() => {
+              clearSession();
+              void build();
+            }}
+            title={c.report.regenerate}
+          >
+            <RotateCcw aria-hidden />
+          </Button>
+        </div>
+      </div>
+
+      {/* Disclaimer — hard constraint #6 */}
+      <div className="mb-6">
+        <Disclaimer />
+      </div>
+
+      {/* Headline score */}
+      <Card className="mb-6 print-avoid-break">
+        <CardContent className="flex flex-wrap items-center justify-between gap-6 pt-6">
+          <div>
+            <p className="text-sm text-muted-foreground">{c.report.totalScore}</p>
+            <p className="mt-1 text-5xl font-bold tabular-nums">
+              {report.totalScore}
+              <span className="ml-2 text-lg font-normal text-muted-foreground">
+                / 100
+              </span>
+            </p>
+          </div>
+          <div className="max-w-md">
+            <p className="text-sm text-muted-foreground">{c.report.band}</p>
+            <Badge variant={bandTone(report.band)} className="mt-1 text-sm">
+              {c.bands[report.band].label}
+            </Badge>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {c.bands[report.band].description}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Session metadata */}
+      <Card className="mb-6 print-avoid-break">
+        <CardHeader>
+          <CardTitle className="text-base">{c.report.metaTitle}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
+            <MetaItem label={c.setup.fieldName} value={report.profile.name || '—'} />
+            <MetaItem
+              label={c.setup.fieldJenjang}
+              value={
+                report.profile.jenjang === 'doktor'
+                  ? c.setup.fieldJenjangDoktor
+                  : c.setup.fieldJenjangMagister
+              }
+            />
+            <MetaItem
+              label={c.setup.fieldUniversitas}
+              value={`${report.profile.universitas || '—'} · ${report.profile.prodi || '—'}`}
+            />
+            <MetaItem label={c.setup.fieldBidang} value={report.profile.bidang || '—'} />
+            <MetaItem
+              label={c.report.metaDate}
+              value={formatDateTime(report.createdAt, locale)}
+            />
+            <MetaItem
+              label={c.report.metaDuration}
+              value={formatDuration(report.durationMs, locale)}
+            />
+            <MetaItem label={c.report.metaModel} value={report.model} />
+            <MetaItem label={c.report.metaAnswers} value={String(report.answerCount)} />
+            <MetaItem
+              label={c.report.metaPhasesCovered}
+              value={
+                report.phasesCovered.map((phase) => c.phases[phase].name).join(', ') || '—'
+              }
+            />
+          </dl>
+        </CardContent>
+      </Card>
+
+      {/* Dimension table */}
+      <Card className="mb-6 print-avoid-break">
+        <CardHeader>
+          <CardTitle className="text-base">{c.report.dimensionsTitle}</CardTitle>
+        </CardHeader>
+        <CardContent className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-border text-left text-xs uppercase tracking-wide text-muted-foreground">
+                <th scope="col" className="py-2 pr-3 font-medium">
+                  {c.report.dimensionTable.dimension}
+                </th>
+                <th scope="col" className="py-2 pr-3 font-medium">
+                  {c.report.dimensionTable.owner}
+                </th>
+                <th scope="col" className="py-2 pr-3 text-right font-medium">
+                  {c.report.dimensionTable.weight}
+                </th>
+                <th scope="col" className="py-2 pr-3 text-right font-medium">
+                  {c.report.dimensionTable.score}
+                </th>
+                <th scope="col" className="py-2 text-right font-medium">
+                  {c.report.dimensionTable.weighted}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {report.dimensions.map((dimension) => {
+                const spec = getDimension(dimension.id);
+                return (
+                  <tr key={dimension.id} className="border-b border-border/60">
+                    <td className="py-2 pr-3">{c.rubric[dimension.id].name}</td>
+                    <td className="py-2 pr-3 text-muted-foreground">
+                      {c.panelists[spec.owner].name}
+                    </td>
+                    <td className="py-2 pr-3 text-right tabular-nums text-muted-foreground">
+                      {spec.weight}
+                    </td>
+                    <td className="py-2 pr-3 text-right">
+                      <span className="font-semibold tabular-nums">
+                        {dimension.score}
+                      </span>
+                      <span className="text-muted-foreground">/4</span>
+                    </td>
+                    <td className="py-2 text-right tabular-nums">
+                      {dimension.weighted.toFixed(1)}
+                    </td>
+                  </tr>
+                );
+              })}
+              <tr className="font-semibold">
+                <td className="py-2 pr-3" colSpan={4}>
+                  {c.report.totalScore}
+                </td>
+                <td className="py-2 text-right tabular-nums">{report.totalScore}</td>
+              </tr>
+            </tbody>
+          </table>
+        </CardContent>
+      </Card>
+
+      {/* Per-dimension detail */}
+      <section className="mb-6 space-y-4">
+        {report.dimensions.map((dimension) => {
+          const spec = getDimension(dimension.id);
+          return (
+            <Card key={dimension.id} className="print-avoid-break">
+              <CardHeader>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <CardTitle className="text-base">
+                      {c.rubric[dimension.id].name}
+                    </CardTitle>
+                    <CardDescription>
+                      {c.panelists[spec.owner].name} · {c.report.dimensionTable.weight}{' '}
+                      {spec.weight}
+                    </CardDescription>
+                  </div>
+                  <Badge variant={dimension.score >= 3 ? 'success' : dimension.score === 2 ? 'warning' : 'destructive'}>
+                    {dimension.score}/4 · {c.report.scoreLabels[dimension.score]}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4 text-sm">
+                <p>{dimension.justification}</p>
+
+                {dimension.quotes.length > 0 ? (
+                  <div>
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      {c.report.evidenceTitle}
+                    </p>
+                    <ul className="space-y-2">
+                      {dimension.quotes.map((quote) => (
+                        <li
+                          key={quote}
+                          className="border-l-2 border-primary/40 pl-3 italic text-muted-foreground"
+                        >
+                          “{quote}”
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+
+                {dimension.strengths.length > 0 ? (
+                  <div>
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-emerald-700 dark:text-emerald-300">
+                      {c.report.strengthsTitle}
+                    </p>
+                    <ul className="list-inside list-disc space-y-1 text-muted-foreground">
+                      {dimension.strengths.map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+
+                {dimension.improvements.length > 0 ? (
+                  <div>
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">
+                      {c.report.weaknessesTitle}
+                    </p>
+                    <ul className="list-inside list-disc space-y-1 text-muted-foreground">
+                      {dimension.improvements.map((item) => (
+                        <li key={item}>{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+              </CardContent>
+            </Card>
+          );
+        })}
+      </section>
+
+      {/* Panelist narratives */}
+      {report.panelNotes.length > 0 ? (
+        <section className="mb-6">
+          <h2 className="mb-3 text-xl font-semibold tracking-tight">
+            {c.report.panelNotesTitle}
+          </h2>
+          <div className="space-y-4">
+            {report.panelNotes.map((note) => (
+              <Card key={note.panelist} className="print-avoid-break">
+                <CardContent className="flex gap-4 pt-6">
+                  <PanelistAvatar speaker={note.panelist as PanelistId} />
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold">
+                      {c.panelists[note.panelist].name}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {c.panelists[note.panelist].role}
+                    </p>
+                    <p className="mt-2 text-sm prose-plain">{note.narrative}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {/* Signal checklist */}
+      <Card className="mb-6 print-avoid-break">
+        <CardHeader>
+          <CardTitle className="text-base">{c.report.signalsTitle}</CardTitle>
+          <CardDescription>{c.report.signalsSubtitle}</CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-6 md:grid-cols-2">
+          <div>
+            <p className="mb-2 text-sm font-semibold">{c.report.signalStrongTitle}</p>
+            <ul className="space-y-2">
+              {report.strongSignals.map((check) => {
+                const label = c.signals.strong[check.index];
+                if (!label) return null;
+                return (
+                  <SignalRow key={check.index} check={check} label={label} kind="strong" />
+                );
+              })}
+            </ul>
+          </div>
+          <div>
+            <p className="mb-2 text-sm font-semibold">{c.report.signalWeakTitle}</p>
+            <ul className="space-y-2">
+              {report.weakSignals.map((check) => {
+                const label = c.signals.weak[check.index];
+                if (!label) return null;
+                return (
+                  <SignalRow key={check.index} check={check} label={label} kind="weak" />
+                );
+              })}
+            </ul>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Next steps */}
+      {report.nextSteps.length > 0 ? (
+        <Card className="mb-6 print-avoid-break">
+          <CardHeader>
+            <CardTitle className="text-base">{c.report.nextStepsTitle}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ol className="space-y-3">
+              {report.nextSteps.map((step, index) => (
+                <li key={step} className="flex gap-3 text-sm">
+                  <span
+                    aria-hidden
+                    className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary"
+                  >
+                    {index + 1}
+                  </span>
+                  <span>{step}</span>
+                </li>
+              ))}
+            </ol>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {/* Transcript */}
+      <Card className="print-break-before">
+        <CardHeader>
+          <CardTitle className="text-base">{c.report.transcriptTitle}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <details>
+            <summary className="no-print cursor-pointer text-sm font-medium text-primary">
+              {c.report.transcriptToggleShow}
+            </summary>
+            <div className="mt-4 space-y-4">
+              {report.turns
+                .filter((turn) => turn.speaker !== 'system')
+                .map((turn) => (
+                  <div key={turn.id} className="text-sm">
+                    <p className="mb-1 text-xs text-muted-foreground">
+                      <span className="font-semibold text-foreground">
+                        {turn.speaker === 'user'
+                          ? c.panelists.you.name
+                          : c.panelists[turn.speaker as PanelistId].name}
+                      </span>{' '}
+                      · <span className="font-mono">{formatClock(turn.atMs)}</span>
+                      {turn.lang === 'en' ? ' · EN' : ''}
+                    </p>
+                    <p
+                      className={cn(
+                        'prose-plain rounded-md px-3 py-2',
+                        turn.speaker === 'user'
+                          ? 'bg-secondary'
+                          : 'border border-border',
+                      )}
+                    >
+                      {turn.text}
+                    </p>
+                  </div>
+                ))}
+            </div>
+          </details>
+        </CardContent>
+      </Card>
+
+      <div className="no-print mt-8 flex flex-wrap justify-center gap-3">
+        <Button asChild variant="outline">
+          <Link href="/setup">{c.report.noReportCta}</Link>
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function MetaItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <dt className="text-xs text-muted-foreground">{label}</dt>
+      <dd className="mt-0.5 break-words">{value}</dd>
+    </div>
+  );
+}
+
+const VERDICT_ICON: Record<SignalVerdict, typeof CheckCircle2> = {
+  present: CheckCircle2,
+  partial: CircleDashed,
+  absent: MinusCircle,
+};
+
+function SignalRow({
+  check,
+  label,
+  kind,
+}: {
+  check: SignalCheck;
+  label: string;
+  kind: 'strong' | 'weak';
+}) {
+  const { c } = useI18n();
+  const Icon = VERDICT_ICON[check.verdict];
+
+  // For weak signals, "present" is bad; for strong signals, "present" is good.
+  const good = kind === 'strong' ? check.verdict === 'present' : check.verdict === 'absent';
+  const neutral = check.verdict === 'partial';
+
+  const verdictLabel =
+    kind === 'weak'
+      ? check.verdict === 'present'
+        ? c.report.signalWeakPresent
+        : c.report.signalWeakAbsent
+      : check.verdict === 'present'
+        ? c.report.signalStrong
+        : check.verdict === 'partial'
+          ? c.report.signalPartial
+          : c.report.signalMissing;
+
+  return (
+    <li className="flex items-start gap-2 text-sm">
+      <Icon
+        aria-hidden
+        className={cn(
+          'mt-0.5 size-4 shrink-0',
+          good
+            ? 'text-emerald-600 dark:text-emerald-400'
+            : neutral
+              ? 'text-amber-600 dark:text-amber-400'
+              : 'text-muted-foreground',
+        )}
+      />
+      <span className="min-w-0">
+        <span>{label}</span>
+        <span className="block text-xs text-muted-foreground">
+          {verdictLabel}
+          {check.note ? ` · ${check.note}` : ''}
+        </span>
+      </span>
+    </li>
+  );
+}
