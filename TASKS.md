@@ -258,3 +258,13 @@ direction (2026-08-17); first task is voice input (P1-1).
   URL treated as same-origin). `guardedFetch` is now exported for unit testing,
   matching the existing pattern for internal helpers. Verified by temporarily
   disabling the header-stripping: the cross-origin test fails as expected.
+- 2026-08-17 · ad-hoc · perf(panel): cut provider prompt-cache misses during the
+  interview. The panelist system prompt mutated every minute ("Sisa waktu
+  wawancara sekitar N menit" sat *before* the document excerpts) and the 14-turn
+  history window slid one turn per call, so nearly the whole prompt re-prefilled
+  (cache miss) on most turns. Now the system prompt is byte-stable per
+  (panelist, phase, language); remaining minutes, wrap-up pressure, and the
+  closing-statement request moved to the trailing moderator-directive message;
+  and the history window start advances in anchored 8-turn steps
+  (`historyWindowStart`), growing append-only between advances. Tests in
+  `personas.test.ts` pin both the byte-stability and the anchor.

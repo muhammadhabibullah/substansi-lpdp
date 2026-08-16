@@ -10,6 +10,8 @@ import {
   buildPanelistMessages,
   buildPanelistSystemPrompt,
   HISTORY_WINDOW,
+  HISTORY_WINDOW_STEP,
+  historyWindowStart,
   isPanelistId,
   PANELIST_IDS,
   panelistLabel,
@@ -151,16 +153,18 @@ describe('buildPanelistSystemPrompt', () => {
     expect(english).toMatch(/BAHASA INGGRIS/);
   });
 
-  it('adds wrap-up pressure when time is nearly gone', () => {
-    const prompt = buildPanelistSystemPrompt(context({ wrapUp: true }));
-    expect(prompt).toMatch(/WAKTU HAMPIR HABIS/);
-  });
+  it('keeps per-turn state out of the system prompt (prompt-cache stability)', () => {
+    const baseline = buildPanelistSystemPrompt(context());
+    expect(baseline).not.toMatch(/SISA WAKTU/);
+    expect(baseline).not.toMatch(/WAKTU HAMPIR HABIS/);
 
-  it('asks for a closing statement on the final turn', () => {
-    const prompt = buildPanelistSystemPrompt(
-      context({ phase: 'closing', requestClosingStatement: true }),
-    );
-    expect(prompt).toMatch(/closing statement/i);
+    // Minute ticks, wrap-up pressure, and the closing-statement request must
+    // not change a single byte of the system prompt.
+    expect(buildPanelistSystemPrompt(context({ remainingMinutes: 3.4 }))).toBe(baseline);
+    expect(buildPanelistSystemPrompt(context({ wrapUp: true }))).toBe(baseline);
+    expect(
+      buildPanelistSystemPrompt(context({ phase: 'closing', requestClosingStatement: true })),
+    ).toBe(buildPanelistSystemPrompt(context({ phase: 'closing' })));
   });
 
   it('notes the absence of documents rather than fencing nothing', () => {
@@ -172,9 +176,14 @@ describe('buildPanelistSystemPrompt', () => {
     expect(prompt).not.toContain('</dokumen>');
   });
 
-  it('reports remaining minutes for pacing', () => {
-    const prompt = buildPanelistSystemPrompt(context({ remainingMinutes: 12 }));
-    expect(prompt).toContain('12 menit');
+  it('reports remaining minutes and wrap-up pressure in the trailing directive', () => {
+    const messages = buildPanelistMessages(
+      context({ remainingMinutes: 12, wrapUp: true, requestClosingStatement: true }),
+    );
+    const last = String(messages.at(-1)?.content);
+    expect(last).toContain('12 menit');
+    expect(last).toMatch(/WAKTU HAMPIR HABIS/);
+    expect(last).toMatch(/closing statement/i);
   });
 
   it('gives each panelist a distinct persona', () => {
@@ -231,16 +240,31 @@ describe('buildPanelistMessages', () => {
     expect(String(relayed?.content)).toContain('[Tim LPDP berkata kepada kandidat]');
   });
 
-  it('caps the transcript window', () => {
+  it('caps the transcript window at a stable anchor', () => {
     const history = Array.from({ length: 40 }, (_, index) =>
       turn({ id: `t${index}`, text: `giliran ${index}` }),
     );
     const messages = buildPanelistMessages(context({ history }));
 
-    // system + window + directive
-    expect(messages.length).toBe(HISTORY_WINDOW + 2);
-    // The window must be the most recent turns.
-    expect(String(messages[1]?.content)).toContain(`giliran ${40 - HISTORY_WINDOW}`);
+    // system + window + directive; the window stays within one step of the minimum.
+    const windowSize = messages.length - 2;
+    expect(windowSize).toBeGreaterThanOrEqual(HISTORY_WINDOW);
+    expect(windowSize).toBeLessThan(HISTORY_WINDOW + HISTORY_WINDOW_STEP);
+    // The window must end with the most recent turn.
+    expect(String(messages.at(-2)?.content)).toContain('giliran 39');
+
+    // The anchor only advances every HISTORY_WINDOW_STEP turns, so one more
+    // turn must not shift the first windowed message (cache-friendly prefix).
+    const grown = buildPanelistMessages(
+      context({ history: [...history, turn({ id: 't40', text: 'giliran 40' })] }),
+    );
+    expect(grown[1]?.content).toBe(messages[1]?.content);
+  });
+
+  it('anchors the window start in coarse steps', () => {
+    expect(historyWindowStart(HISTORY_WINDOW)).toBe(0);
+    expect(historyWindowStart(HISTORY_WINDOW + HISTORY_WINDOW_STEP - 1)).toBe(0);
+    expect(historyWindowStart(HISTORY_WINDOW + HISTORY_WINDOW_STEP)).toBe(HISTORY_WINDOW_STEP);
   });
 
   it('falls back to a generic directive when none is given', () => {

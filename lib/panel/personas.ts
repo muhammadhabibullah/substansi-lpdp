@@ -209,21 +209,39 @@ export interface PanelistPromptContext {
   remainingMinutes: number;
 }
 
-/** Turns of transcript given to a panelist. Keeps prompts bounded. */
+/** Minimum turns of transcript given to a panelist. Keeps prompts bounded. */
 export const HISTORY_WINDOW = 14;
+
+/**
+ * The window start only advances every this many turns. Between advances the
+ * history grows append-only, so the message prefix stays byte-identical across
+ * turns and provider prompt caches keep hitting instead of re-prefilling.
+ */
+export const HISTORY_WINDOW_STEP = 8;
+
+/** Exported for unit testing. */
+export function historyWindowStart(totalTurns: number): number {
+  const overflow = Math.max(0, totalTurns - HISTORY_WINDOW);
+  return Math.floor(overflow / HISTORY_WINDOW_STEP) * HISTORY_WINDOW_STEP;
+}
 
 export function buildPanelistSystemPrompt(context: PanelistPromptContext): string {
   const { panelist, profile, documents, phase } = context;
   const excerpts = buildExcerptsFor(panelist, documents, profile);
   const phaseDefinition = getPhase(phase);
 
+  // Prompt-cache stability: everything assembled here must be byte-stable for a
+  // given (panelist, phase, language) so provider prefix caches hit across
+  // turns. Per-turn dynamic state (remaining minutes, wrap-up pressure, the
+  // closing-statement request) therefore lives in the trailing directive
+  // message instead — see buildPanelistMessages.
   const sections: string[] = [
     characterFor(panelist, profile),
     '',
     profileBlock(profile),
     '',
     PHASE_GUIDANCE[phase],
-    `Tahap ini dijatah sekitar ${phaseDefinition.minutes} menit. Sisa waktu wawancara sekitar ${Math.max(0, Math.round(context.remainingMinutes))} menit.`,
+    `Tahap ini dijatah sekitar ${phaseDefinition.minutes} menit.`,
   ];
 
   if (excerpts) {
@@ -238,20 +256,6 @@ export function buildPanelistSystemPrompt(context: PanelistPromptContext): strin
     sections.push(
       '',
       'CATATAN: kandidat tidak menyertakan dokumen untuk fokus Anda. Bertanyalah berdasarkan profil di atas dan jawaban kandidat.',
-    );
-  }
-
-  if (context.wrapUp) {
-    sections.push(
-      '',
-      'WAKTU HAMPIR HABIS: mulai arahkan sesi ke penutup. Jangan membuka topik baru yang panjang.',
-    );
-  }
-
-  if (context.requestClosingStatement) {
-    sections.push(
-      '',
-      'GILIRAN PENUTUP: sampaikan bahwa waktu hampir habis dan minta kandidat menyampaikan closing statement singkat. Ini pertanyaan terakhir Anda.',
     );
   }
 
@@ -298,7 +302,7 @@ export function panelistLabel(panelist: PanelistId): string {
  * then the moderator's directive as the final instruction.
  */
 export function buildPanelistMessages(context: PanelistPromptContext): CoreMessage[] {
-  const window = context.history.slice(-HISTORY_WINDOW);
+  const window = context.history.slice(historyWindowStart(context.history.length));
 
   const messages: CoreMessage[] = [
     { role: 'system', content: buildPanelistSystemPrompt(context) },
@@ -306,12 +310,32 @@ export function buildPanelistMessages(context: PanelistPromptContext): CoreMessa
   ];
 
   const directive = context.directive.trim();
+
+  // Per-turn dynamic state goes here, at the very end of the prompt, so the
+  // stable system + history prefix above stays cacheable.
+  const sessionState = [
+    `SISA WAKTU WAWANCARA: sekitar ${Math.max(0, Math.round(context.remainingMinutes))} menit.`,
+  ];
+  if (context.wrapUp) {
+    sessionState.push(
+      'WAKTU HAMPIR HABIS: mulai arahkan sesi ke penutup. Jangan membuka topik baru yang panjang.',
+    );
+  }
+  if (context.requestClosingStatement) {
+    sessionState.push(
+      'GILIRAN PENUTUP: sampaikan bahwa waktu hampir habis dan minta kandidat menyampaikan closing statement singkat. Ini pertanyaan terakhir Anda.',
+    );
+  }
+
   messages.push({
     role: 'system',
     content: [
       'INSTRUKSI MODERATOR UNTUK GILIRAN ANDA:',
       directive ||
         'Lanjutkan wawancara sesuai fokus dan tahap Anda dengan satu pertanyaan yang menggali lebih dalam.',
+      '',
+      'KEADAAN SESI:',
+      ...sessionState,
       '',
       'Sekarang ucapkan giliran Anda. Ingat: satu pertanyaan, maksimal 3–4 kalimat, tanpa nama pembicara, tanpa penilaian.',
     ].join('\n'),
