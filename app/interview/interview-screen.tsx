@@ -2,7 +2,6 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import {
   AlertTriangle,
   Clock,
@@ -38,7 +37,6 @@ import { combineTranscript, recognitionLang } from '@/lib/voice';
 
 export function InterviewScreen() {
   const { c, f } = useI18n();
-  const router = useRouter();
   const { settings, configured, hydrated: settingsReady } = useSettings();
   const { profile, hydrated: profileReady } = useProfile();
   const { documents, hydrated: docsReady } = useDocuments();
@@ -63,8 +61,7 @@ export function InterviewScreen() {
   // Voice input follows the session language (PLAN §1 language behavior).
   const voice = useVoiceInput({ lang: recognitionLang(session?.lang ?? 'id') });
 
-  const composerBusy =
-    busy || interview.preparingDocs || session?.status === 'finished';
+  const composerBusy = busy || interview.preparingDocs;
   const hydrated = settingsReady && profileReady && docsReady;
 
   const setupIncomplete =
@@ -90,12 +87,12 @@ export function InterviewScreen() {
     node.scrollTop = node.scrollHeight;
   }, [session?.turns.length, streaming?.text]);
 
-  // Navigate to the report once the panel has finished.
-  React.useEffect(() => {
-    if (session?.status === 'finished') {
-      router.push('/report');
-    }
-  }, [session?.status, router]);
+  // Start a fresh session from the finished-session screen: reset() clears the
+  // stored session, then start() begins a new interview immediately.
+  const startNew = () => {
+    interview.reset();
+    interview.start();
+  };
 
   const submit = () => {
     const text = draft.trim();
@@ -151,6 +148,39 @@ export function InterviewScreen() {
     );
   }
 
+  /* ── Guard: previous session finished ─────────────────────────────────── */
+
+  if (session.status === 'finished') {
+    const answerCount = session.turns.filter((turn) => turn.speaker === 'user').length;
+    return (
+      <div className="container max-w-2xl py-16">
+        <Card>
+          <CardHeader>
+            <CardTitle>{c.interview.finished}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-muted-foreground">{c.interview.finishedSessionBody}</p>
+            <p className="text-sm text-muted-foreground">
+              {f(c.interview.finishedSessionDuration, {
+                duration: formatClock(session.elapsedMs),
+                answers: f(c.interview.answersCount, { count: answerCount }),
+              })}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={startNew}>
+                <RotateCcw aria-hidden />
+                {c.interview.startNewSession}
+              </Button>
+              <Button asChild variant="outline">
+                <Link href="/report">{c.interview.viewReport}</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   const currentPhaseIndex = phaseIndex(session.phase);
   const overtime = interview.remainingMs <= 0;
   const finishing = session.status === 'wrapping';
@@ -187,12 +217,7 @@ export function InterviewScreen() {
                 {formatClock(interview.remainingMs)}
               </span>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setConfirmEnd(true)}
-              disabled={session.status === 'finished'}
-            >
+            <Button variant="outline" size="sm" onClick={() => setConfirmEnd(true)}>
               <Square aria-hidden />
               {c.interview.endEarly}
             </Button>

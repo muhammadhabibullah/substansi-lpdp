@@ -307,6 +307,10 @@ const id = {
     wrappingUp: 'Panel sedang menutup sesi…',
     finishing: 'Menyusun laporan penilaian…',
     finished: 'Wawancara selesai',
+    finishedSessionBody:
+      'Sesi wawancara sebelumnya telah selesai. Lihat laporan penilaian Anda, atau mulai wawancara baru.',
+    finishedSessionDuration: 'Durasi: {duration} · {answers}',
+    startNewSession: 'Mulai wawancara baru',
     viewReport: 'Lihat laporan',
     noSessionTitle: 'Belum ada sesi wawancara',
     noSessionBody: 'Selesaikan persiapan terlebih dahulu untuk memulai wawancara.',
@@ -939,6 +943,10 @@ const en: Copy = {
     wrappingUp: 'The panel is wrapping up…',
     finishing: 'Building your assessment report…',
     finished: 'Interview finished',
+    finishedSessionBody:
+      'Your previous interview session has finished. View your assessment report, or start a new interview.',
+    finishedSessionDuration: 'Duration: {duration} · {answers}',
+    startNewSession: 'Start a new interview',
     viewReport: 'View report',
     noSessionTitle: 'No interview session yet',
     noSessionBody: 'Complete the setup first to start an interview.',
