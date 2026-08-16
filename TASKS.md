@@ -97,6 +97,18 @@ direction (2026-08-17); first task is voice input (P1-1).
 
 <!-- Newest first. Format: YYYY-MM-DD · TASK-ID · what changed · notes for next session -->
 
+- 2026-08-17 · ad-hoc · chore(ci): broadened the key-leak scan in
+  `.github/workflows/ci.yml` to cover every BYOK key shape from the README
+  table: OpenAI (`sk-...`, incl. `sk-proj-`), OpenRouter (`sk-or-v1-...`),
+  Groq (`gsk_...`) across repo sources + build output, plus a long-token
+  heuristic (`[A-Za-z0-9_-]{48,}`) on sources only for arbitrary local
+  endpoint keys (Ollama/LM Studio). The heuristic skips `out/` because the
+  bundle legitimately embeds long base64 runs (fonts, pdf.js WASM worker) and
+  allowlists the LPDP article URL slug in `lib/site.ts`. Validated: extracted
+  the exact CI script and ran it against a throwaway fixture (all four key
+  shapes detected, exit 1) and the clean repo + static build output (exit 0).
+  Triggers and permissions unchanged.
+
 - 2026-08-17 · P1-7 · feat(panel): per-role time blocks, follow-ups, and
   "Tim LPDP" rename (user feedback #3). Phase budgets rebalanced to
   5/10/15/10/15/5 so each role leads 15–20 min of questioning: Akademisi 15'

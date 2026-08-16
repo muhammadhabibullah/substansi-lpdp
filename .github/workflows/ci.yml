@@ -65,8 +65,24 @@ jobs:
       - name: Assert no API keys were committed or bundled
         run: |
           # Hard constraint #2: no key may appear in the repo or the bundle.
-          if grep -rEn "sk-[A-Za-z0-9]{20,}" out/ app/ lib/ components/ hooks/ 2>/dev/null; then
+          # Shapes covered (README BYOK table): OpenAI (sk-...), OpenRouter
+          # (sk-or-v1-...), Groq (gsk_...), plus a long-token heuristic for
+          # arbitrary keys of local OpenAI-compatible endpoints (Ollama /
+          # LM Studio).
+          KEY_PREFIXES='sk-[A-Za-z0-9_-]{20,}|sk-or-v1-[A-Za-z0-9_-]{30,}|gsk_[A-Za-z0-9_-]{20,}'
+          LONG_TOKEN='[A-Za-z0-9_-]{48,}'
+          if grep -rEn "$KEY_PREFIXES" out/ app/ lib/ components/ hooks/ 2>/dev/null; then
             echo "::error::A string resembling an API key was found."
+            exit 1
+          fi
+          # Long-token heuristic on sources only: the build output embeds
+          # legitimately long base64 runs (fonts, the pdf.js WASM worker).
+          # Legitimate long tokens (e.g. the LPDP article URL slug) are
+          # allowlisted here.
+          ALLOWED_LONG_TOKENS='ini-yang-perlu-disiapkan-untuk-hadapi-seleksi-substansi-lpdp'
+          if grep -rEoh "$LONG_TOKEN" app/ lib/ components/ hooks/ 2>/dev/null \
+              | grep -Ev "^($ALLOWED_LONG_TOKENS)$"; then
+            echo "::error::A long token resembling an API key was found."
             exit 1
           fi
           echo "No API key patterns found."
