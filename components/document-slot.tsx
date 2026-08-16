@@ -19,7 +19,7 @@ import {
 } from '@/lib/documents';
 import { formatBytes } from '@/lib/storage';
 import type { DocKind, ParsedDoc } from '@/lib/types';
-import { cn, formatNumber } from '@/lib/utils';
+import { cn, countWords, formatNumber } from '@/lib/utils';
 
 type Mode = 'upload' | 'paste';
 
@@ -151,11 +151,11 @@ export function DocumentSlot({
             <CheckCircle2 aria-hidden className="size-3" />
             {doc.pageCount
               ? f(c.setup.parsedOk, {
-                  chars: formatNumber(doc.charCount, locale),
+                  words: formatNumber(countWords(doc.text), locale),
                   pages: doc.pageCount,
                 })
               : f(c.setup.parsedOkNoPages, {
-                  chars: formatNumber(doc.charCount, locale),
+                  words: formatNumber(countWords(doc.text), locale),
                 })}
           </Badge>
         ) : null}

@@ -52,3 +52,10 @@ export function clamp(value: number, min: number, max: number): number {
 export function collapseWhitespace(text: string): string {
   return text.replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
 }
+
+/** Count whitespace-separated words in a text. */
+export function countWords(text: string): number {
+  const trimmed = text.trim();
+  if (trimmed.length === 0) return 0;
+  return trimmed.split(/\s+/).length;
+}
