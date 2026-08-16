@@ -532,23 +532,49 @@ export async function complete(options: CompleteOptions): Promise<string> {
 export interface StreamOptions extends CompleteOptions {
   /** Called with each incremental text delta. */
   onDelta?: (delta: string) => void;
+  /**
+   * Called when a stream was cut off by the token limit and is about to be
+   * retried with a larger budget. Callers rendering `onDelta` live must reset
+   * their buffered text first, because the retry regenerates the turn from
+   * scratch.
+   */
+  onTruncationRetry?: () => void;
+}
+
+/**
+ * Upper bound for the post-truncation retry budget. Reasoning models (gpt-5*,
+ * o1/o3/o4) count internal thinking against the shared `max_completion_tokens`
+ * budget, so visible output can be cut off mid-sentence even when the caller's
+ * budget looks generous. Doubling the budget fixes that; the cap only guards
+ * against unreasonable requests. Exported for unit testing.
+ */
+export const TRUNCATION_RETRY_MAX_TOKENS = 4000;
+
+/** Exported for unit testing. */
+export function truncatedRetryBudget(maxTokens: number): number {
+  return Math.min(maxTokens * 2, TRUNCATION_RETRY_MAX_TOKENS);
 }
 
 /**
  * Streaming completion used by the panelists. Resolves with the full text once
  * the stream ends; `onDelta` receives incremental chunks for live rendering.
+ *
+ * A stream that ends with `finishReason: 'length'` hit the token cap and would
+ * render as a half-finished question, so it is retried once with a doubled
+ * budget. If that is still truncated, a `bad-response` error surfaces the
+ * normal recovery UI ("Coba lagi") instead of committing a cut-off turn.
  */
 export async function streamComplete(options: StreamOptions): Promise<string> {
   const resolved = assertConfigured(options.settings);
   const provider = createProvider(resolved);
   const modelId = pickModel(resolved, options.tier ?? 'main');
 
-  try {
+  const runOnce = async (maxTokens: number | undefined) => {
     const result = streamText({
       model: provider(modelId),
       messages: options.messages,
       temperature: options.temperature ?? resolved.temperature,
-      maxTokens: options.maxTokens,
+      maxTokens,
       abortSignal: options.signal,
       maxRetries: 1,
     });
@@ -558,16 +584,29 @@ export async function streamComplete(options: StreamOptions): Promise<string> {
       text += delta;
       options.onDelta?.(delta);
     }
+    const finishReason = await result.finishReason.catch(() => 'unknown');
+    return { text: text.trim(), finishReason };
+  };
+
+  try {
+    let { text, finishReason } = await runOnce(options.maxTokens);
+
+    if (finishReason === 'length' && options.maxTokens !== undefined) {
+      options.onTruncationRetry?.();
+      ({ text, finishReason } = await runOnce(truncatedRetryBudget(options.maxTokens)));
+    }
 
     // A stream that ends with nothing is a failure, not an empty answer.
-    if (text.trim().length === 0) {
-      const finish = await result.finishReason.catch(() => 'unknown');
+    if (text.length === 0) {
       throw new LlmError(
         'bad-response',
-        `Stream produced no text (finishReason: ${String(finish)})`,
+        `Stream produced no text (finishReason: ${finishReason})`,
       );
     }
-    return text.trim();
+    if (finishReason === 'length') {
+      throw new LlmError('bad-response', 'Stream was cut off by the token limit');
+    }
+    return text;
   } catch (error) {
     throw toLlmError(error);
   }

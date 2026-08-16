@@ -253,12 +253,17 @@ export function useInterview(options: UseInterviewOptions): UseInterviewResult {
           settings: settingsRef.current,
           messages,
           tier: 'main',
-          maxTokens: 700,
+          maxTokens: 1500,
           signal: controller.signal,
           onDelta: (delta) => {
             setStreaming((live) =>
               live ? { ...live, text: live.text + delta } : live,
             );
+          },
+          // A token-capped stream is retried with a larger budget; drop the
+          // partial text so the regenerated turn renders from a clean buffer.
+          onTruncationRetry: () => {
+            setStreaming({ panelist: plan.panelist, text: '' });
           },
         });
 

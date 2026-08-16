@@ -20,6 +20,8 @@ import {
   sanitizeReasoningModelBody,
   streamComplete,
   toLlmError,
+  TRUNCATION_RETRY_MAX_TOKENS,
+  truncatedRetryBudget,
 } from './llm';
 import type { LlmSettings } from './types';
 
@@ -572,6 +574,89 @@ describe('complete() self-heals from the max_tokens/max_completion_tokens mismat
 
     expect(text).toBe('Halo kandidat.');
     expect(callCount).toBe(2);
+  });
+});
+
+describe('streamComplete truncation recovery (finishReason "length")', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  /** OpenAI-compatible SSE ending with the given finish reason. */
+  const sseStream = (content: string, finishReason: string): string =>
+    [
+      `data: ${JSON.stringify({ id: '1', object: 'chat.completion.chunk', created: 0, model: 'gpt-5-mini', choices: [{ index: 0, delta: { content }, finish_reason: null }] })}\n\n`,
+      `data: ${JSON.stringify({ id: '1', object: 'chat.completion.chunk', created: 0, model: 'gpt-5-mini', choices: [{ index: 0, delta: {}, finish_reason: finishReason }] })}\n\n`,
+      'data: [DONE]\n\n',
+    ].join('');
+
+  it('doubles the budget for the retry budget helper, capped', () => {
+    expect(truncatedRetryBudget(700)).toBe(1400);
+    expect(truncatedRetryBudget(1500)).toBe(3000);
+    expect(truncatedRetryBudget(TRUNCATION_RETRY_MAX_TOKENS)).toBe(
+      TRUNCATION_RETRY_MAX_TOKENS,
+    );
+  });
+
+  it('retries once with a doubled budget when the stream hits the token cap', async () => {
+    let callCount = 0;
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      callCount += 1;
+      const body = JSON.parse(String(init?.body ?? '{}'));
+      // gpt-5-mini is proactively sanitized to max_completion_tokens.
+      if (callCount === 1) {
+        expect(body.max_completion_tokens).toBe(1500);
+        return new Response(sseStream('Apa rencana ', 'length'), {
+          status: 200,
+          headers: { 'content-type': 'text/event-stream' },
+        });
+      }
+      expect(body.max_completion_tokens).toBe(3000);
+      return new Response(sseStream('Apa rencana studi Anda?', 'stop'), {
+        status: 200,
+        headers: { 'content-type': 'text/event-stream' },
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const deltas: string[] = [];
+    let resets = 0;
+    const text = await streamComplete({
+      settings,
+      messages: [{ role: 'user', content: 'ping' }],
+      maxTokens: 1500,
+      onDelta: (delta) => deltas.push(delta),
+      onTruncationRetry: () => {
+        resets += 1;
+        deltas.length = 0; // caller resets its live buffer
+      },
+    });
+
+    expect(text).toBe('Apa rencana studi Anda?');
+    expect(callCount).toBe(2);
+    expect(resets).toBe(1);
+    expect(deltas.join('')).toBe('Apa rencana studi Anda?');
+  });
+
+  it('surfaces the recovery card when the retry is still truncated', async () => {
+    const fetchMock = vi.fn(async () =>
+      new Response(sseStream('Apa rencana ', 'length'), {
+        status: 200,
+        headers: { 'content-type': 'text/event-stream' },
+      }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(
+      streamComplete({
+        settings,
+        messages: [{ role: 'user', content: 'ping' }],
+        maxTokens: 1500,
+      }),
+    ).rejects.toMatchObject({ kind: 'bad-response' });
+
+    // Exactly one retry, no more.
+    expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 });
 

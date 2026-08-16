@@ -187,3 +187,11 @@ direction (2026-08-17); first task is voice input (P1-1).
   invalid cheap model id, or weak JSON compliance). `annotateAnswer` now uses a
   1500-token budget and falls back to the main model before returning null;
   added `lib/panel/notetaker.test.ts` (5 tests).
+- 2026-08-17 · ad-hoc · fix(llm): panelist questions were sometimes cut off
+  mid-sentence because reasoning models count internal thinking against the
+  shared `max_completion_tokens` budget (panelist budget raised 700 → 1500).
+  `streamComplete` now detects `finishReason: 'length'`, retries once with a
+  doubled budget (capped at 4000) via a new `onTruncationRetry` hook that
+  resets the live streaming buffer in `use-interview`, and surfaces the
+  existing "Coba lagi" recovery card if the retry is still truncated. Added 3
+  tests to `lib/llm.test.ts`.
