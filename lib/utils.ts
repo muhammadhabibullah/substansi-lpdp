@@ -59,3 +59,21 @@ export function countWords(text: string): number {
   if (trimmed.length === 0) return 0;
   return trimmed.split(/\s+/).length;
 }
+
+/**
+ * True when the endpoint runs on the user's own machine (Ollama, LM Studio),
+ * where OpenAI-compatible servers usually accept requests without a key.
+ */
+export function isLocalBaseUrl(raw: string): boolean {
+  try {
+    const host = new URL(raw.trim()).hostname.replace(/^\[|\]$/g, '').toLowerCase();
+    return (
+      host === 'localhost' ||
+      host === '::1' ||
+      host === '0.0.0.0' ||
+      host.startsWith('127.')
+    );
+  } catch {
+    return false;
+  }
+}

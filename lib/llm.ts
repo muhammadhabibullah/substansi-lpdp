@@ -16,6 +16,7 @@ import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import { generateText, streamText, type CoreMessage } from 'ai';
 
 import type { LlmSettings } from './types';
+import { isLocalBaseUrl } from './utils';
 
 export type { CoreMessage };
 
@@ -217,6 +218,9 @@ export function assertConfigured(settings: LlmSettings): ResolvedSettings {
   }
   if (!resolved.model) {
     throw new LlmError('not-configured', 'Model is not set');
+  }
+  if (!resolved.apiKey && !isLocalBaseUrl(resolved.baseUrl)) {
+    throw new LlmError('not-configured', 'API key is not set');
   }
   return resolved;
 }

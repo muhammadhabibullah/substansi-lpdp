@@ -16,6 +16,7 @@ import {
   type Profile,
   type Report,
 } from './types';
+import { isLocalBaseUrl } from './utils';
 
 /** Bump when a persisted shape changes incompatibly. */
 export const SCHEMA_VERSION = 1;
@@ -170,9 +171,16 @@ export function clearApiKey(): void {
   saveSettings({ ...settings, apiKey: '' });
 }
 
-/** Settings are usable when there is an endpoint and a model. */
+/**
+ * Settings are usable when there is an endpoint, a model, and an API key —
+ * unless the endpoint is local (Ollama/LM Studio style), which usually
+ * accepts requests without one.
+ */
 export function settingsAreUsable(settings: LlmSettings): boolean {
-  return settings.baseUrl.trim().length > 0 && settings.model.trim().length > 0;
+  if (settings.baseUrl.trim().length === 0) return false;
+  if (settings.model.trim().length === 0) return false;
+  if (settings.apiKey.trim().length > 0) return true;
+  return isLocalBaseUrl(settings.baseUrl);
 }
 
 /* ── Profile ─────────────────────────────────────────────────────────────── */

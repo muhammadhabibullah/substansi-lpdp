@@ -123,7 +123,7 @@ const id = {
       'Anda memakai kunci API sendiri dari penyedia OpenAI-compatible mana pun — OpenAI, OpenRouter, Groq, atau model lokal via Ollama/LM Studio. Kunci disimpan hanya di localStorage browser Anda.',
     byokCta: 'Buka pengaturan BYOK',
     needSettingsWarning:
-      'Anda belum mengatur endpoint LLM. Atur dulu di halaman Pengaturan sebelum memulai wawancara.',
+      'Anda belum mengatur endpoint LLM dan kunci API. Atur dulu di halaman Pengaturan sebelum memulai wawancara.',
     openSourceTitle: 'Open source',
     openSourceBody:
       'Berlisensi MIT. Baca kodenya, laporkan isu, atau jalankan salinan Anda sendiri — hasil build-nya identik.',
@@ -247,7 +247,7 @@ const id = {
     reviewProfile: 'Profil',
     reviewDocuments: 'Dokumen',
     reviewLlm: 'Pengaturan LLM',
-    reviewLlmReady: 'Endpoint dan model sudah diatur',
+    reviewLlmReady: 'Endpoint, model, dan kunci API sudah diatur',
     reviewLlmMissing: 'Belum diatur — wawancara tidak bisa dimulai',
     reviewBudget: 'Perkiraan konteks',
     reviewBudgetValue: '{chars} karakter dokumen akan dipakai panel',
@@ -256,7 +256,7 @@ const id = {
     blockedTitle: 'Belum bisa memulai',
     missingProfileFields: 'Lengkapi dulu: {fields}',
     missingDocs: 'Sertakan dokumen: {docs}',
-    missingLlm: 'Atur endpoint LLM di halaman Pengaturan',
+    missingLlm: 'Atur endpoint LLM dan kunci API di halaman Pengaturan',
     existingSessionWarning:
       'Ada wawancara yang belum selesai. Memulai yang baru akan menghapus transkrip lama.',
     existingSessionResume: 'Lanjutkan yang lama',
@@ -760,7 +760,7 @@ const en: Copy = {
       'You use your own API key from any OpenAI-compatible provider — OpenAI, OpenRouter, Groq, or local models via Ollama/LM Studio. The key is stored only in your browser’s localStorage.',
     byokCta: 'Open BYOK settings',
     needSettingsWarning:
-      'You have not configured an LLM endpoint yet. Set it up in Settings before starting an interview.',
+      'You have not configured an LLM endpoint and API key yet. Set them up in Settings before starting an interview.',
     openSourceTitle: 'Open source',
     openSourceBody:
       'MIT licensed. Read the code, file issues, or run your own copy — the build is identical.',
@@ -884,7 +884,7 @@ const en: Copy = {
     reviewProfile: 'Profile',
     reviewDocuments: 'Documents',
     reviewLlm: 'LLM settings',
-    reviewLlmReady: 'Endpoint and model configured',
+    reviewLlmReady: 'Endpoint, model, and API key configured',
     reviewLlmMissing: 'Not configured — the interview cannot start',
     reviewBudget: 'Estimated context',
     reviewBudgetValue: '{chars} characters of documents will be used by the panel',
@@ -893,7 +893,7 @@ const en: Copy = {
     blockedTitle: 'Not ready to start',
     missingProfileFields: 'Please complete: {fields}',
     missingDocs: 'Please add these documents: {docs}',
-    missingLlm: 'Configure the LLM endpoint in Settings',
+    missingLlm: 'Configure the LLM endpoint and API key in Settings',
     existingSessionWarning:
       'You have an unfinished interview. Starting a new one will erase the old transcript.',
     existingSessionResume: 'Resume the old one',

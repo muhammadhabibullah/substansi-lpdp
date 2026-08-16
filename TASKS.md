@@ -268,3 +268,11 @@ direction (2026-08-17); first task is voice input (P1-1).
   and the history window start advances in anchored 8-turn steps
   (`historyWindowStart`), growing append-only between advances. Tests in
   `personas.test.ts` pin both the byte-stability and the anchor.
+- 2026-08-17 · ad-hoc · fix(setup): "Mulai wawancara" was enabled without an API
+  key because `settingsAreUsable` only checked base URL + model. It now requires
+  a non-empty key unless the endpoint is local (localhost/127.x/::1/0.0.0.0 —
+  Ollama/LM Studio style, matching the existing "empty key ok for local
+  endpoints" semantics); `assertConfigured` in `lib/llm.ts` enforces the same
+  rule so a slipped-through session fails fast with `not-configured` instead of
+  a 401 mid-interview. Review/blocked/landing copy now mentions the key (id+en).
+  New tests in `lib/storage.test.ts` (4) and `lib/llm.test.ts` (1).

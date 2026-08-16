@@ -232,6 +232,11 @@ describe('resolveSettings / assertConfigured', () => {
       }),
     ).not.toThrow();
   });
+
+  it('rejects an empty key for remote endpoints', () => {
+    expect(() => assertConfigured({ ...settings, apiKey: '' })).toThrow(LlmError);
+    expect(() => assertConfigured({ ...settings, apiKey: '   ' })).toThrow(LlmError);
+  });
 });
 
 describe('toLlmError', () => {

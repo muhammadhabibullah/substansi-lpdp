@@ -5,6 +5,7 @@ import {
   loadReport,
   loadReports,
   MAX_REPORT_HISTORY,
+  settingsAreUsable,
   STORAGE_KEYS,
   upsertReport,
 } from './storage';
@@ -61,6 +62,40 @@ function makeReport(id: string, createdAt: number): Report {
     turns: [],
   };
 }
+
+describe('settingsAreUsable', () => {
+  const base = {
+    baseUrl: 'https://api.openai.com/v1',
+    apiKey: '',
+    model: 'gpt-5-mini',
+    cheapModel: '',
+    temperature: 0.7,
+    presetId: 'openai',
+  };
+
+  it('rejects a remote endpoint without an API key', () => {
+    expect(settingsAreUsable({ ...base, apiKey: '' })).toBe(false);
+    expect(settingsAreUsable({ ...base, apiKey: '   ' })).toBe(false);
+  });
+
+  it('accepts a remote endpoint with an API key', () => {
+    expect(settingsAreUsable({ ...base, apiKey: 'sk-test' })).toBe(true);
+  });
+
+  it('accepts local endpoints without a key', () => {
+    expect(
+      settingsAreUsable({ ...base, apiKey: '', baseUrl: 'http://localhost:11434/v1' }),
+    ).toBe(true);
+    expect(
+      settingsAreUsable({ ...base, apiKey: '', baseUrl: 'http://127.0.0.1:1234/v1' }),
+    ).toBe(true);
+  });
+
+  it('still requires a base URL and a model', () => {
+    expect(settingsAreUsable({ ...base, apiKey: 'sk', baseUrl: '' })).toBe(false);
+    expect(settingsAreUsable({ ...base, apiKey: 'sk', model: '  ' })).toBe(false);
+  });
+});
 
 describe('report history storage', () => {
   it('starts empty', () => {
