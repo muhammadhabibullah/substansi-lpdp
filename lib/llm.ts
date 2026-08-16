@@ -223,42 +223,207 @@ export function assertConfigured(settings: LlmSettings): ResolvedSettings {
 
 /**
  * Newer OpenAI models (the `gpt-5*`, `o1*`, `o3*`, `o4*` reasoning families)
- * reject the legacy `max_tokens` chat-completions field and require
- * `max_completion_tokens` instead. The AI SDK's OpenAI-compatible provider
- * always sends `max_tokens` with no override, and which models need the new
- * name changes over time — so instead of hardcoding a model list, this
- * recognizes the specific error OpenAI returns and retries once with the
- * parameter renamed. Other providers (Groq, OpenRouter, Ollama, LM Studio)
- * never trigger this and pay no extra cost.
+ * reject several classic chat-completions parameters that older models and
+ * every other OpenAI-compatible provider accept fine. Two layers defend
+ * against this:
+ *
+ *  1. **Proactive** — `sanitizeBodyForModel` rewrites the request body before
+ *     the very first attempt whenever the body's `model` belongs to a family
+ *     known to reject these parameters. No wasted round-trip, and it works
+ *     even when a gateway reports rejections inside a 200 SSE stream.
+ *  2. **Reactive** — an unrecognized model that still rejects a parameter
+ *     gets one retry per quirk: `guardedFetch` recognizes the specific error
+ *     the endpoint returns and patches the request body accordingly.
+ *
+ * Providers that never hit these errors (Groq, OpenRouter, Ollama, LM Studio)
+ * are unaffected and pay no extra request.
  */
-const MAX_TOKENS_ERROR_PATTERN =
-  /unsupported parameter.{0,40}'max_tokens'.{0,80}max_completion_tokens/i;
-
-/** Exported for unit testing; also used internally by `guardedFetch`. */
-export function isMaxTokensUnsupportedError(message: string): boolean {
-  return MAX_TOKENS_ERROR_PATTERN.test(message);
+interface RequestQuirkFix {
+  /** Human-readable id, used only in test output. */
+  id: string;
+  /** Matches the error message the endpoint returns for this incompatibility. */
+  matches: (message: string) => boolean;
+  /** Returns a patched JSON body, or null if this quirk does not apply here. */
+  patch: (body: string) => string | null;
 }
 
 /**
- * Rewrite a JSON request body's `max_tokens` key to `max_completion_tokens`.
- * Exported for unit testing; also used internally by `guardedFetch`.
+ * Model families that reject the classic parameters: `gpt-5*` and the `o1/o3/
+ * o4` reasoning series. Tolerates provider prefixes (`openai/gpt-5-mini`,
+ * `openrouter/openai/o3`) and date suffixes (`o3-2025-04-16`), and never
+ * matches unrelated ids (`gpt-5000`, `koala-13b`, `o15`).
  */
-export function renameMaxTokensField(body: string): string | null {
+const REASONING_MODEL_PATTERN = /(?:^|[/.])(?:gpt-5|o1|o3|o4)(?:[.-]|$)/i;
+
+/** Exported for unit testing. */
+export function isReasoningOnlyModel(modelId: string): boolean {
+  return REASONING_MODEL_PATTERN.test(modelId.trim());
+}
+
+/**
+ * `max_tokens` is rejected; the model wants `max_completion_tokens` with the
+ * same value instead.
+ */
+const maxTokensQuirk: RequestQuirkFix = {
+  id: 'max_tokens -> max_completion_tokens',
+  matches: (message) =>
+    /unsupported parameter.{0,40}'max_tokens'.{0,80}max_completion_tokens/i.test(message),
+  patch: (body) => renameJsonField(body, 'max_tokens', 'max_completion_tokens'),
+};
+
+/**
+ * A non-default `temperature` is rejected; the model only accepts the
+ * implicit default, so the field must be dropped rather than renamed.
+ */
+const temperatureQuirk: RequestQuirkFix = {
+  id: 'drop unsupported temperature',
+  matches: (message) =>
+    /unsupported value.{0,20}'temperature'.{0,120}only the default.{0,20}value is supported/i.test(
+      message,
+    ),
+  patch: (body) => dropJsonField(body, 'temperature'),
+};
+
+/** Checked in order against each failed response body. */
+const REQUEST_QUIRK_FIXES: readonly RequestQuirkFix[] = [maxTokensQuirk, temperatureQuirk];
+
+/**
+ * Layer 1 (proactive): rewrite the request body for model families known to
+ * reject classic parameters, so their very first attempt is already valid.
+ * The model id is read from the body itself so cheap/main tiers are each
+ * sanitized by their own id. Returns the patched JSON, or null when the
+ * model is not affected, nothing needed patching, or the body is not JSON.
+ */
+function sanitizeBodyForModel(body: string): string | null {
   try {
     const parsed = JSON.parse(body) as Record<string, unknown>;
-    if (!('max_tokens' in parsed)) return null;
-    const { max_tokens: maxTokens, ...rest } = parsed;
-    return JSON.stringify({ ...rest, max_completion_tokens: maxTokens });
+    if (typeof parsed.model !== 'string' || !isReasoningOnlyModel(parsed.model)) {
+      return null;
+    }
+    let changed = false;
+    if ('max_tokens' in parsed) {
+      parsed.max_completion_tokens = parsed.max_tokens;
+      delete parsed.max_tokens;
+      changed = true;
+    }
+    if ('temperature' in parsed) {
+      delete parsed.temperature;
+      changed = true;
+    }
+    return changed ? JSON.stringify(parsed) : null;
   } catch {
     return null;
+  }
+}
+
+/** Exported for unit testing; also used internally by `guardedFetch`. */
+export function sanitizeReasoningModelBody(body: string): string | null {
+  return sanitizeBodyForModel(body);
+}
+
+/** Exported for unit testing. */
+export function isMaxTokensUnsupportedError(message: string): boolean {
+  return maxTokensQuirk.matches(message);
+}
+
+/** Exported for unit testing. */
+export function isTemperatureUnsupportedError(message: string): boolean {
+  return temperatureQuirk.matches(message);
+}
+
+/**
+ * Rename a JSON body's field, preserving its value and every other field.
+ * Returns null when the field is absent or the body is not valid JSON.
+ */
+function renameJsonField(body: string, from: string, to: string): string | null {
+  try {
+    const parsed = JSON.parse(body) as Record<string, unknown>;
+    if (!(from in parsed)) return null;
+    const { [from]: value, ...rest } = parsed;
+    return JSON.stringify({ ...rest, [to]: value });
+  } catch {
+    return null;
+  }
+}
+
+/** Exported for unit testing; also used internally by `guardedFetch`. */
+export function renameMaxTokensField(body: string): string | null {
+  return renameJsonField(body, 'max_tokens', 'max_completion_tokens');
+}
+
+/** Remove a JSON body's field entirely. Returns null when it is already absent. */
+function dropJsonField(body: string, field: string): string | null {
+  try {
+    const parsed = JSON.parse(body) as Record<string, unknown>;
+    if (!(field in parsed)) return null;
+    const { [field]: _dropped, ...rest } = parsed;
+    return JSON.stringify(rest);
+  } catch {
+    return null;
+  }
+}
+
+/** Exported for unit testing; also used internally by `guardedFetch`. */
+export function dropTemperatureField(body: string): string | null {
+  return dropJsonField(body, 'temperature');
+}
+
+/** How many self-healing retries a single request may go through. */
+const MAX_QUIRK_RETRIES = REQUEST_QUIRK_FIXES.length;
+
+/**
+ * How long a single request may wait for the endpoint to *start* responding.
+ * Generous on purpose: reasoning models think before they stream, and it is
+ * better to wait two minutes and then surface the normal recovery UI ("Coba
+ * lagi") than to fail a slow-but-working endpoint early. The timer clears as
+ * soon as response headers arrive, so long streams are never cut short.
+ * Exported for unit testing.
+ */
+export const RESPONSE_TIMEOUT_MS = 120_000;
+
+/**
+ * `fetch` with a wait-for-response timeout. A timeout is reported as a
+ * retryable network failure (so the recovery UI with "Coba lagi" appears),
+ * while a caller-initiated abort keeps propagating as an `AbortError` so
+ * intentional cancels stay silent.
+ */
+async function fetchWithTimeout(
+  input: Parameters<typeof fetch>[0],
+  init: RequestInit | undefined,
+  timeoutMs: number,
+): Promise<Response> {
+  const controller = new AbortController();
+  let timedOut = false;
+  const timer = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, timeoutMs);
+
+  const callerSignal = init?.signal ?? undefined;
+  const forwardAbort = () => controller.abort();
+  callerSignal?.addEventListener('abort', forwardAbort);
+  if (callerSignal?.aborted) controller.abort();
+
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } catch (error) {
+    if (timedOut) {
+      // A TypeError maps onto `LlmError.kind === 'network'` (retryable).
+      throw new TypeError(`LLM request timed out after ${timeoutMs} ms`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timer);
+    callerSignal?.removeEventListener('abort', forwardAbort);
   }
 }
 
 /**
  * A `fetch` wrapper that strips the Authorization header if the request ever
  * targets an origin other than the configured base URL (e.g. after a redirect),
- * and transparently retries with `max_completion_tokens` when the endpoint
- * rejects `max_tokens` (see `isMaxTokensUnsupportedError`).
+ * proactively sanitizes the body for known-picky model families, and
+ * transparently retries with a patched body when the endpoint rejects a
+ * parameter per `REQUEST_QUIRK_FIXES`.
  */
 function guardedFetch(baseUrl: string): typeof fetch {
   return async (input, init) => {
@@ -278,24 +443,38 @@ function guardedFetch(baseUrl: string): typeof fetch {
     // Never auto-follow a cross-origin redirect while credentials are attached.
     const requestInit: RequestInit = { ...init, headers, redirect: 'error' };
 
-    const response = await fetch(input, requestInit);
-    if (response.ok || typeof init?.body !== 'string') return response;
-
-    // Peek at the error body without consuming the caller's response stream.
-    const probe = response.clone();
-    let message = '';
-    try {
-      message = await probe.text();
-    } catch {
-      return response;
+    // Layer 1: make the first attempt already valid for known-picky models.
+    let body = init?.body;
+    if (typeof body === 'string') {
+      body = sanitizeBodyForModel(body) ?? body;
     }
 
-    if (!isMaxTokensUnsupportedError(message)) return response;
+    let response = await fetchWithTimeout(input, { ...requestInit, body }, RESPONSE_TIMEOUT_MS);
 
-    const patched = renameMaxTokensField(init.body);
-    if (!patched) return response;
+    // Layer 2: heal unrecognized models from their own error message.
+    for (let attempt = 0; attempt < MAX_QUIRK_RETRIES; attempt += 1) {
+      if (response.ok || typeof body !== 'string') return response;
 
-    return fetch(input, { ...requestInit, body: patched });
+      // Peek at the error body without consuming the caller's response stream.
+      const probe = response.clone();
+      let message = '';
+      try {
+        message = await probe.text();
+      } catch {
+        return response;
+      }
+
+      const quirk = REQUEST_QUIRK_FIXES.find((candidate) => candidate.matches(message));
+      if (!quirk) return response;
+
+      const patched = quirk.patch(body);
+      if (!patched) return response;
+
+      body = patched;
+      response = await fetchWithTimeout(input, { ...requestInit, body }, RESPONSE_TIMEOUT_MS);
+    }
+
+    return response;
   };
 }
 

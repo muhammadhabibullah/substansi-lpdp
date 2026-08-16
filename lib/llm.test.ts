@@ -3,16 +3,21 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   assertConfigured,
   complete,
+  dropTemperatureField,
   extractJson,
   findPreset,
   isMaxTokensUnsupportedError,
+  isReasoningOnlyModel,
   isSameOriginAsBase,
+  isTemperatureUnsupportedError,
   LlmError,
   normalizeBaseUrl,
   parseBaseUrl,
   PROVIDER_PRESETS,
   renameMaxTokensField,
   resolveSettings,
+  RESPONSE_TIMEOUT_MS,
+  sanitizeReasoningModelBody,
   streamComplete,
   toLlmError,
 } from './llm';
@@ -315,8 +320,136 @@ describe('renameMaxTokensField', () => {
   });
 });
 
+describe('isTemperatureUnsupportedError', () => {
+  it('recognises the real OpenAI error message', () => {
+    expect(
+      isTemperatureUnsupportedError(
+        "Unsupported value: 'temperature' does not support 0 with this model. Only the default (1) value is supported.",
+      ),
+    ).toBe(true);
+  });
+
+  it('recognises the message wrapped in an OpenAI error envelope', () => {
+    const body = JSON.stringify({
+      error: {
+        message:
+          "Unsupported value: 'temperature' does not support 0.7 with this model. Only the default (1) value is supported.",
+        type: 'invalid_request_error',
+        param: 'temperature',
+        code: 'unsupported_value',
+      },
+    });
+    expect(isTemperatureUnsupportedError(body)).toBe(true);
+  });
+
+  it('is case-insensitive', () => {
+    expect(
+      isTemperatureUnsupportedError(
+        "UNSUPPORTED VALUE: 'TEMPERATURE' DOES NOT SUPPORT 0 WITH THIS MODEL. ONLY THE DEFAULT (1) VALUE IS SUPPORTED.",
+      ),
+    ).toBe(true);
+  });
+
+  it('does not match unrelated errors', () => {
+    expect(isTemperatureUnsupportedError('Invalid API key provided')).toBe(false);
+    expect(isTemperatureUnsupportedError('Rate limit exceeded')).toBe(false);
+    expect(
+      isTemperatureUnsupportedError(
+        "Unsupported parameter: 'max_tokens' is not supported with this model.",
+      ),
+    ).toBe(false);
+    expect(isTemperatureUnsupportedError('')).toBe(false);
+  });
+});
+
+describe('dropTemperatureField', () => {
+  it('drops temperature and preserves every other field', () => {
+    const patched = dropTemperatureField(
+      JSON.stringify({ model: 'gpt-5-mini', temperature: 0, max_tokens: 16, messages: [] }),
+    );
+    expect(JSON.parse(patched!)).toEqual({
+      model: 'gpt-5-mini',
+      max_tokens: 16,
+      messages: [],
+    });
+  });
+
+  it('returns null when there is no temperature field', () => {
+    expect(dropTemperatureField(JSON.stringify({ model: 'x' }))).toBeNull();
+  });
+
+  it('returns null for unparseable input', () => {
+    expect(dropTemperatureField('not json')).toBeNull();
+  });
+});
+
+describe('isReasoningOnlyModel', () => {
+  it('matches the gpt-5 family', () => {
+    expect(isReasoningOnlyModel('gpt-5')).toBe(true);
+    expect(isReasoningOnlyModel('gpt-5-mini')).toBe(true);
+    expect(isReasoningOnlyModel('gpt-5-chat-latest')).toBe(true);
+  });
+
+  it('matches the o1/o3/o4 reasoning series', () => {
+    expect(isReasoningOnlyModel('o1')).toBe(true);
+    expect(isReasoningOnlyModel('o1-preview')).toBe(true);
+    expect(isReasoningOnlyModel('o3')).toBe(true);
+    expect(isReasoningOnlyModel('o3-2025-04-16')).toBe(true);
+    expect(isReasoningOnlyModel('o4-mini')).toBe(true);
+  });
+
+  it('tolerates provider prefixes and casing', () => {
+    expect(isReasoningOnlyModel('openai/gpt-5-mini')).toBe(true);
+    expect(isReasoningOnlyModel('openrouter/openai/o3')).toBe(true);
+    expect(isReasoningOnlyModel('GPT-5-MINI')).toBe(true);
+  });
+
+  it('does not match classic or unrelated models', () => {
+    expect(isReasoningOnlyModel('gpt-4o')).toBe(false);
+    expect(isReasoningOnlyModel('gpt-4o-mini')).toBe(false);
+    expect(isReasoningOnlyModel('gpt-5000')).toBe(false);
+    expect(isReasoningOnlyModel('o15')).toBe(false);
+    expect(isReasoningOnlyModel('llama-3.3-70b-versatile')).toBe(false);
+    expect(isReasoningOnlyModel('koala-13b')).toBe(false);
+    expect(isReasoningOnlyModel('')).toBe(false);
+  });
+});
+
+describe('sanitizeReasoningModelBody', () => {
+  it('renames max_tokens and drops temperature for a reasoning model', () => {
+    const patched = sanitizeReasoningModelBody(
+      JSON.stringify({ model: 'gpt-5-mini', max_tokens: 700, temperature: 0.7, messages: [] }),
+    );
+    expect(JSON.parse(patched!)).toEqual({
+      model: 'gpt-5-mini',
+      max_completion_tokens: 700,
+      messages: [],
+    });
+  });
+
+  it('leaves classic models untouched', () => {
+    expect(
+      sanitizeReasoningModelBody(JSON.stringify({ model: 'gpt-4o', max_tokens: 700 })),
+    ).toBeNull();
+    expect(
+      sanitizeReasoningModelBody(
+        JSON.stringify({ model: 'llama-3.3-70b-versatile', temperature: 0.7 }),
+      ),
+    ).toBeNull();
+  });
+
+  it('returns null when nothing needs patching', () => {
+    expect(sanitizeReasoningModelBody(JSON.stringify({ model: 'gpt-5-mini' }))).toBeNull();
+  });
+
+  it('returns null for unparseable input', () => {
+    expect(sanitizeReasoningModelBody('not json')).toBeNull();
+  });
+});
+
 describe('complete() self-heals from the max_tokens/max_completion_tokens mismatch', () => {
-  const gptFiveSettings: LlmSettings = { ...settings, model: 'gpt-5-mini' };
+  // A model the proactive layer does not know, so the reactive layer is tested.
+  const quirkyServerSettings: LlmSettings = { ...settings, model: 'gpt-4o' };
 
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -365,7 +498,7 @@ describe('complete() self-heals from the max_tokens/max_completion_tokens mismat
     vi.stubGlobal('fetch', fetchMock);
 
     const reply = await complete({
-      settings: gptFiveSettings,
+      settings: quirkyServerSettings,
       messages: [{ role: 'user', content: 'ping' }],
       maxTokens: 16,
     });
@@ -387,7 +520,7 @@ describe('complete() self-heals from the max_tokens/max_completion_tokens mismat
 
     await expect(
       complete({
-        settings: gptFiveSettings,
+        settings: quirkyServerSettings,
         messages: [{ role: 'user', content: 'ping' }],
         maxTokens: 16,
       }),
@@ -431,10 +564,360 @@ describe('complete() self-heals from the max_tokens/max_completion_tokens mismat
 
     const deltas: string[] = [];
     const text = await streamComplete({
-      settings: gptFiveSettings,
+      settings: quirkyServerSettings,
       messages: [{ role: 'user', content: 'ping' }],
       maxTokens: 700,
       onDelta: (delta) => deltas.push(delta),
+    });
+
+    expect(text).toBe('Halo kandidat.');
+    expect(callCount).toBe(2);
+  });
+});
+
+describe('response timeout (waiting for the endpoint to start answering)', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+  });
+
+  /** A fetch that hangs until its signal aborts, like a stalled endpoint. */
+  const makeAbortError = () => {
+    const abortError = new Error('The operation was aborted');
+    abortError.name = 'AbortError';
+    return abortError;
+  };
+  const stalledFetch = vi.fn((_input: RequestInfo | URL, init?: RequestInit) => {
+    return new Promise<Response>((_resolve, reject) => {
+      const signal = init?.signal;
+      if (signal?.aborted) {
+        reject(makeAbortError());
+        return;
+      }
+      signal?.addEventListener('abort', () => reject(makeAbortError()));
+    });
+  });
+
+  it('surfaces a stalled endpoint as a retryable network error ("Coba lagi")', async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal('fetch', stalledFetch);
+
+    const pending = complete({
+      settings,
+      messages: [{ role: 'user', content: 'ping' }],
+    });
+    pending.catch(() => undefined); // keep the rejection observed for vitest
+    const assertion = expect(pending).rejects.toMatchObject({ kind: 'network' });
+
+    // Nothing yet just before the deadline; the error appears right after it.
+    await vi.advanceTimersByTimeAsync(RESPONSE_TIMEOUT_MS - 1);
+    await vi.advanceTimersByTimeAsync(2);
+    await assertion;
+
+    let surfaced: LlmError | undefined;
+    await pending.catch((caught: unknown) => {
+      surfaced = toLlmError(caught);
+    });
+    expect(surfaced?.retryable).toBe(true);
+  });
+
+  it('keeps a caller-initiated abort silent (no error card)', async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal('fetch', stalledFetch);
+
+    const controller = new AbortController();
+    const pending = complete({
+      settings,
+      messages: [{ role: 'user', content: 'ping' }],
+      signal: controller.signal,
+    });
+    pending.catch(() => undefined); // keep the rejection observed for vitest
+    controller.abort();
+    await vi.advanceTimersByTimeAsync(1);
+
+    await expect(pending).rejects.toMatchObject({ kind: 'aborted' });
+  });
+
+  it('gives each self-healing retry its own full timeout window', async () => {
+    vi.useFakeTimers();
+    let callCount = 0;
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      callCount += 1;
+      const body = JSON.parse(String(init?.body ?? '{}'));
+      if (callCount === 1) {
+        // Force one quirk retry against an unknown model.
+        expect(body.max_tokens).toBeDefined();
+        return new Response(
+          JSON.stringify({
+            error: {
+              message:
+                "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.",
+            },
+          }),
+          { status: 400, headers: { 'content-type': 'application/json' } },
+        );
+      }
+      // Second attempt stalls — it must only give up after a *fresh* full
+      // window, not the time already spent on attempt one.
+      return new Promise<Response>((_resolve, reject) => {
+        init?.signal?.addEventListener('abort', () => reject(makeAbortError()));
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const pending = complete({
+      settings: { ...settings, model: 'gpt-4o' },
+      messages: [{ role: 'user', content: 'ping' }],
+      maxTokens: 16,
+    });
+    pending.catch(() => undefined); // keep the rejection observed for vitest
+    const assertion = expect(pending).rejects.toMatchObject({ kind: 'network' });
+
+    await vi.advanceTimersByTimeAsync(RESPONSE_TIMEOUT_MS + 10);
+    await assertion;
+    expect(callCount).toBe(2);
+  });
+});
+
+describe('complete() proactively sanitizes known reasoning models (no retry needed)', () => {
+  const gptFiveSettings: LlmSettings = { ...settings, model: 'gpt-5-mini' };
+
+  const okReply = JSON.stringify({
+    id: 'chatcmpl-1',
+    object: 'chat.completion',
+    created: 0,
+    model: 'gpt-5-mini',
+    choices: [
+      { index: 0, message: { role: 'assistant', content: 'OK' }, finish_reason: 'stop' },
+    ],
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('sends max_completion_tokens and no temperature on the very first attempt', async () => {
+    let callCount = 0;
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      callCount += 1;
+      const body = JSON.parse(String(init?.body ?? '{}'));
+      expect(body.max_completion_tokens).toBe(16);
+      expect(body).not.toHaveProperty('max_tokens');
+      expect(body).not.toHaveProperty('temperature');
+      return new Response(okReply, {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const reply = await complete({
+      settings: gptFiveSettings,
+      messages: [{ role: 'user', content: 'ping' }],
+      temperature: 0,
+      maxTokens: 16,
+    });
+
+    expect(reply).toBe('OK');
+    // No failed round-trip: exactly one request.
+    expect(callCount).toBe(1);
+  });
+
+  it('sanitizes streaming panelist turns the same way', async () => {
+    let callCount = 0;
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      callCount += 1;
+      const body = JSON.parse(String(init?.body ?? '{}'));
+      expect(body.max_completion_tokens).toBe(700);
+      expect(body).not.toHaveProperty('max_tokens');
+      expect(body).not.toHaveProperty('temperature');
+      const sse = [
+        `data: ${JSON.stringify({ id: '1', object: 'chat.completion.chunk', created: 0, model: 'gpt-5-mini', choices: [{ index: 0, delta: { content: 'Halo kandidat.' }, finish_reason: null }] })}\n\n`,
+        `data: ${JSON.stringify({ id: '1', object: 'chat.completion.chunk', created: 0, model: 'gpt-5-mini', choices: [{ index: 0, delta: {}, finish_reason: 'stop' }] })}\n\n`,
+        'data: [DONE]\n\n',
+      ].join('');
+      return new Response(sse, {
+        status: 200,
+        headers: { 'content-type': 'text/event-stream' },
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const text = await streamComplete({
+      settings: gptFiveSettings,
+      messages: [{ role: 'user', content: 'ping' }],
+      maxTokens: 700,
+    });
+
+    expect(text).toBe('Halo kandidat.');
+    expect(callCount).toBe(1);
+  });
+
+  it('also sanitizes provider-prefixed model ids (OpenRouter style)', async () => {
+    let callCount = 0;
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      callCount += 1;
+      const body = JSON.parse(String(init?.body ?? '{}'));
+      expect(body.max_completion_tokens).toBe(16);
+      expect(body).not.toHaveProperty('max_tokens');
+      return new Response(okReply, {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await complete({
+      settings: { ...gptFiveSettings, model: 'openai/gpt-5-mini' },
+      messages: [{ role: 'user', content: 'ping' }],
+      maxTokens: 16,
+    });
+
+    expect(callCount).toBe(1);
+  });
+});
+
+describe('complete() self-heals from a rejected temperature (gpt-5/o-series)', () => {
+  const quirkyServerSettings: LlmSettings = { ...settings, model: 'gpt-4o' };
+
+  const temperatureErrorBody = JSON.stringify({
+    error: {
+      message:
+        "Unsupported value: 'temperature' does not support 0 with this model. Only the default (1) value is supported.",
+      type: 'invalid_request_error',
+      param: 'temperature',
+      code: 'unsupported_value',
+    },
+  });
+
+  const okReply = JSON.stringify({
+    id: 'chatcmpl-1',
+    object: 'chat.completion',
+    created: 0,
+    model: 'gpt-5-mini',
+    choices: [
+      { index: 0, message: { role: 'assistant', content: 'OK' }, finish_reason: 'stop' },
+    ],
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('retries once without temperature and returns the successful reply', async () => {
+    let callCount = 0;
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      callCount += 1;
+      const body = JSON.parse(String(init?.body ?? '{}'));
+
+      if (callCount === 1) {
+        // First attempt carries the configured temperature.
+        expect(body.temperature).toBe(0);
+        return new Response(temperatureErrorBody, {
+          status: 400,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+
+      // Retry: temperature must have been dropped entirely.
+      expect(body).not.toHaveProperty('temperature');
+      return new Response(okReply, {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const reply = await complete({
+      settings: quirkyServerSettings,
+      messages: [{ role: 'user', content: 'ping' }],
+      temperature: 0,
+      maxTokens: 16,
+    });
+
+    expect(reply).toBe('OK');
+    expect(callCount).toBe(2);
+  });
+
+  it('self-heals a request that trips both quirks in sequence', async () => {
+    let callCount = 0;
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      callCount += 1;
+      const body = JSON.parse(String(init?.body ?? '{}'));
+
+      if (callCount === 1) {
+        expect(body.max_tokens).toBeDefined();
+        expect(body.temperature).toBe(0);
+        return new Response(
+          JSON.stringify({
+            error: {
+              message:
+                "Unsupported parameter: 'max_tokens' is not supported with this model. Use 'max_completion_tokens' instead.",
+            },
+          }),
+          { status: 400, headers: { 'content-type': 'application/json' } },
+        );
+      }
+      if (callCount === 2) {
+        expect(body.max_completion_tokens).toBe(16);
+        expect(body.temperature).toBe(0);
+        return new Response(temperatureErrorBody, {
+          status: 400,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+
+      expect(body.max_completion_tokens).toBe(16);
+      expect(body).not.toHaveProperty('temperature');
+      return new Response(okReply, {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const reply = await complete({
+      settings: quirkyServerSettings,
+      messages: [{ role: 'user', content: 'ping' }],
+      temperature: 0,
+      maxTokens: 16,
+    });
+
+    expect(reply).toBe('OK');
+    expect(callCount).toBe(3);
+  });
+
+  it('self-heals the same way for streaming panelist turns', async () => {
+    let callCount = 0;
+    const fetchMock = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      callCount += 1;
+      const body = JSON.parse(String(init?.body ?? '{}'));
+
+      if (callCount === 1) {
+        expect(body.temperature).toBeDefined();
+        return new Response(temperatureErrorBody, {
+          status: 400,
+          headers: { 'content-type': 'application/json' },
+        });
+      }
+
+      expect(body).not.toHaveProperty('temperature');
+      const sse = [
+        `data: ${JSON.stringify({ id: '1', object: 'chat.completion.chunk', created: 0, model: 'gpt-5-mini', choices: [{ index: 0, delta: { content: 'Halo kandidat.' }, finish_reason: null }] })}\n\n`,
+        `data: ${JSON.stringify({ id: '1', object: 'chat.completion.chunk', created: 0, model: 'gpt-5-mini', choices: [{ index: 0, delta: {}, finish_reason: 'stop' }] })}\n\n`,
+        'data: [DONE]\n\n',
+      ].join('');
+      return new Response(sse, {
+        status: 200,
+        headers: { 'content-type': 'text/event-stream' },
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const text = await streamComplete({
+      settings: quirkyServerSettings,
+      messages: [{ role: 'user', content: 'ping' }],
+      maxTokens: 700,
     });
 
     expect(text).toBe('Halo kandidat.');

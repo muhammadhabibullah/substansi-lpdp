@@ -92,6 +92,27 @@ needs user direction before starting.
 
 <!-- Newest first. Format: YYYY-MM-DD · TASK-ID · what changed · notes for next session -->
 
+- 2026-08-17 · fix(llm) · Generous response-wait timeout: `guardedFetch` now
+  wraps every attempt in `fetchWithTimeout` (`RESPONSE_TIMEOUT_MS` = 120 s).
+  A stalled endpoint fails as a retryable `network` error, so the interview
+  recovery card with "Coba lagi" appears after a long wait instead of hanging
+  forever; the timer clears once headers arrive, so long streams are never cut
+  short, and each quirk retry gets its own full window. User-initiated aborts
+  stay silent (`aborted`). Added 3 timeout tests (`pnpm test`: 237 pass).
+  Gates: lint, typecheck, build all pass.
+
+- 2026-08-17 · fix(llm) · Two-layer defense against gpt-5/o-series parameter
+  rejections. Layer 1 (proactive): `guardedFetch` sanitizes the request body
+  before the first attempt when the body's `model` matches the reasoning
+  families (gpt-5*, o1/o3/o4, provider prefixes tolerated) — renames
+  `max_tokens` → `max_completion_tokens` and drops `temperature`, so no failed
+  round-trip and no reliance on error-message wording. Layer 2 (reactive):
+  unrecognized models still self-heal from the endpoint's exact error message,
+  once per quirk. Added unit tests: model matcher, body sanitizer, proactive
+  one-shot non-stream/stream/prefixed-id, reactive paths re-targeted to an
+  unrecognized model (`pnpm test`: 234 pass). Gates: lint, typecheck, build
+  all pass.
+
 - 2025-08-17 · M1–M6 · **v1 feature-complete.** Verified end-to-end in a real
   headless browser against a mock OpenAI-compatible endpoint: 29/29 flow checks
   (BYOK settings + test connection, doc paste/parse, gating, moderator →
