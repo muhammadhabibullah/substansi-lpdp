@@ -282,12 +282,12 @@ const id = {
     voiceStart: 'Mulai berbicara',
     voiceStop: 'Berhenti mendengarkan',
     voiceListening: 'Mendengarkan… silakan bicara.',
-    voiceIdleHint: 'Tekan mikrofon lalu bicara. Transkrip tidak dapat diedit.',
+    voiceIdleHint: 'Tekan mikrofon lalu bicara. Setelah berhenti, transkrip bisa diedit sebelum dikirim.',
     voicePlaceholder: 'Jawaban lisan Anda akan muncul di sini.',
     voiceTranscriptLabel: 'Transkrip jawaban suara',
     voiceDiscard: 'Hapus transkrip',
-    voiceNonEditableNote:
-      'Jawaban suara ditranskripsikan otomatis dan dikirim apa adanya — tidak dapat diedit.',
+    voiceEditableNote:
+      'Jawaban suara ditranskripsikan otomatis. Setelah selesai bicara, periksa dan edit bila perlu sebelum dikirim.',
     voicePrivacyNote:
       'Transkripsi diproses oleh layanan bawaan browser Anda; hanya teks hasilnya yang dipakai aplikasi ini.',
     voiceDenied:
@@ -915,12 +915,12 @@ const en: Copy = {
     voiceStart: 'Start speaking',
     voiceStop: 'Stop listening',
     voiceListening: 'Listening… go ahead.',
-    voiceIdleHint: 'Press the microphone and speak. The transcript cannot be edited.',
+    voiceIdleHint: 'Press the microphone and speak. You can edit the transcript after stopping.',
     voicePlaceholder: 'Your spoken answer will appear here.',
     voiceTranscriptLabel: 'Voice answer transcript',
     voiceDiscard: 'Discard transcript',
-    voiceNonEditableNote:
-      'Voice answers are transcribed automatically and sent as-is — they cannot be edited.',
+    voiceEditableNote:
+      'Voice answers are transcribed automatically. Review and edit them after you stop speaking, before sending.',
     voicePrivacyNote:
       'Transcription is handled by your browser’s built-in service; this app only uses the resulting text.',
     voiceDenied:

@@ -154,4 +154,4 @@ Report contents:
 4. **M4 – Grading**: note-taker annotations, rubric scoring, report page, Markdown/PDF export.
 5. **M5 – Hardening**: doc size limits, prompt-injection guards, disclaimers, error/retry UX for flaky endpoints.
 6. **M6 – OSS polish**: docs (id/en), provider presets (OpenAI/OpenRouter/Ollama), examples with dummy documents.
-7. **Post-v1**: free-tier Cloudflare Worker proxy with shared `gpt-5-mini` key + rate limiting, voice mode (STT/TTS — voice *input* shipped via the browser Speech Recognition API with a read-only, non-editable transcript; TTS pending), report history (shipped — one report per attempt, viewable/deletable history list), question bank enriched from awardee experiences.
+7. **Post-v1**: free-tier Cloudflare Worker proxy with shared `gpt-5-mini` key + rate limiting, voice mode (STT/TTS — voice *input* shipped via the browser Speech Recognition API, voice-first composer with the transcript editable after listening stops; TTS pending), report history (shipped — one report per attempt, viewable/deletable history list), question bank enriched from awardee experiences.

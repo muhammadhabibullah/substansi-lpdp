@@ -7,8 +7,9 @@
  * - Fully client-side: no new dependency, no server, no API key. Transcription
  *   is performed by the browser's own speech service (e.g. Google's in
  *   Chrome); the app only ever receives the resulting text — never audio.
- * - The transcript is read-only by design (P1-1): the candidate's spoken
- *   answer is submitted verbatim, like a real interview.
+ * - The transcript is read-only while the mic is live (recognition overwrites
+ *   it); after listening stops the candidate may review and edit the text
+ *   before sending (P1-6).
  * - Unsupported browsers simply fall back to typing; nothing breaks.
  */
 

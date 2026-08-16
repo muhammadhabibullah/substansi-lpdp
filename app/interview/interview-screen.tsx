@@ -52,7 +52,9 @@ export function InterviewScreen() {
 
   const [draft, setDraft] = React.useState('');
   const [confirmEnd, setConfirmEnd] = React.useState(false);
-  const [inputMode, setInputMode] = React.useState<'text' | 'voice'>('text');
+  // Voice-first answering (P1-6): speaking is the default; typing is the
+  // fallback for unsupported browsers or personal preference.
+  const [inputMode, setInputMode] = React.useState<'text' | 'voice'>('voice');
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const inputRef = React.useRef<HTMLTextAreaElement>(null);
 
@@ -103,7 +105,7 @@ export function InterviewScreen() {
     inputRef.current?.focus();
   };
 
-  /** Submit the spoken answer verbatim — the transcript is non-editable. */
+  /** Submit the spoken answer — finalised (and optionally edited) text. */
   const submitVoice = () => {
     if (busy) return;
     const text = voice.finish();
@@ -348,9 +350,11 @@ export function InterviewScreen() {
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-xs text-muted-foreground">
             {inputMode === 'voice'
-              ? voice.supported
-                ? c.interview.voiceNonEditableNote
-                : c.interview.voiceUnsupported
+              ? !voice.checked
+                ? ''
+                : voice.supported
+                  ? c.interview.voiceEditableNote
+                  : c.interview.voiceUnsupported
               : c.interview.sendHint}
           </p>
           <div className="flex items-center gap-2">
@@ -422,8 +426,9 @@ interface VoiceComposerProps {
 }
 
 /**
- * Voice answer panel. The transcript area is deliberately read-only: spoken
- * answers go to the panel verbatim, mirroring a real interview (P1-1).
+ * Voice answer panel. The transcript is read-only while the mic is live
+ * (recognition overwrites it) and becomes an editable field once listening
+ * stops, so the candidate can fix the text before sending (P1-6).
  */
 function VoiceComposer({ voice, disabled }: VoiceComposerProps) {
   const { c } = useI18n();
@@ -448,12 +453,14 @@ function VoiceComposer({ voice, disabled }: VoiceComposerProps) {
       ) : null}
 
       <Textarea
-        readOnly
+        readOnly={voice.listening}
         value={visibleText}
         rows={3}
         placeholder={c.interview.voicePlaceholder}
         aria-label={c.interview.voiceTranscriptLabel}
-        className="bg-muted/40"
+        aria-readonly={voice.listening}
+        onChange={(event) => voice.setText(event.target.value)}
+        className={voice.listening ? 'bg-muted/40' : undefined}
       />
 
       <div className="flex flex-wrap items-center justify-between gap-2">

@@ -1,15 +1,15 @@
 'use client';
 
 /**
- * hooks/use-voice-input.ts — interview voice input lifecycle (P1-1).
+ * hooks/use-voice-input.ts — interview voice input lifecycle (P1-1, P1-6).
  *
  * Wraps the browser SpeechRecognition API behind a small React hook: start /
  * stop listening, accumulate a confirmed transcript plus live interim words,
  * auto-restart when the engine ends a listening segment (it stops after a
  * pause), insert sentence breaks where the speaker pauses (the speech engine
- * emits no punctuation), and surface user-facing errors. The transcript
- * itself is exposed read-only — the interview screen never offers an edit
- * affordance.
+ * emits no punctuation), and surface user-facing errors. While listening the
+ * transcript is read-only (live recognition overwrites it); once listening
+ * stops, the candidate may edit the text before sending (P1-6).
  */
 
 import * as React from 'react';
@@ -35,6 +35,8 @@ export interface UseVoiceInputOptions {
 export interface UseVoiceInput {
   /** Whether this browser exposes SpeechRecognition at all. */
   supported: boolean;
+  /** True once the browser support check has run (avoids first-paint flash). */
+  checked: boolean;
   listening: boolean;
   /** Confirmed transcript accumulated so far. */
   transcript: string;
@@ -46,6 +48,8 @@ export interface UseVoiceInput {
   stop: () => void;
   /** Discard the transcript (start the answer over). */
   clear: () => void;
+  /** Replace the transcript — editing the answer after listening stops. */
+  setText: (text: string) => void;
   /** Stop listening and return the full answer text, resetting state. */
   finish: () => string;
 }
@@ -55,6 +59,7 @@ const RESTART_DELAY_MS = 250;
 
 export function useVoiceInput(options: UseVoiceInputOptions): UseVoiceInput {
   const [supported, setSupported] = React.useState(false);
+  const [checked, setChecked] = React.useState(false);
   const [listening, setListening] = React.useState(false);
   const [transcript, setTranscript] = React.useState('');
   const [interim, setInterim] = React.useState('');
@@ -81,6 +86,7 @@ export function useVoiceInput(options: UseVoiceInputOptions): UseVoiceInput {
   // Feature detection must run client-side only (SSR-safe).
   React.useEffect(() => {
     setSupported(isSpeechRecognitionSupported());
+    setChecked(true);
   }, []);
 
   const clearRestartTimer = React.useCallback(() => {
@@ -228,6 +234,18 @@ export function useVoiceInput(options: UseVoiceInputOptions): UseVoiceInput {
     boundaryPendingRef.current = false;
   }, []);
 
+  /**
+   * Manual edit of the transcript (P1-6). Editing counts as recent activity
+   * for the sentence-gap heuristic, so resuming the mic right after an edit
+   * appends to the same sentence instead of forcing a boundary.
+   */
+  const setText = React.useCallback((text: string) => {
+    setTranscript(text);
+    setInterim('');
+    lastFinalAtRef.current = Date.now();
+    boundaryPendingRef.current = false;
+  }, []);
+
   const finish = React.useCallback(() => {
     stop();
     const text = finalizePunctuation(
@@ -243,5 +261,17 @@ export function useVoiceInput(options: UseVoiceInputOptions): UseVoiceInput {
   // Never leave the microphone open after unmount.
   React.useEffect(() => teardown, [teardown]);
 
-  return { supported, listening, transcript, interim, error, start, stop, clear, finish };
+  return {
+    supported,
+    checked,
+    listening,
+    transcript,
+    interim,
+    error,
+    start,
+    stop,
+    clear,
+    setText,
+    finish,
+  };
 }

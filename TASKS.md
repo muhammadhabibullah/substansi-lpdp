@@ -79,6 +79,7 @@ direction (2026-08-17); first task is voice input (P1-1).
 | P1-3 | Cloudflare Worker free-tier proxy (shared key + per-IP rate limiting) | parked |
 | P1-4 | Report history: multiple reports (one per attempt) with a viewable/deletable history list on the report page | done |
 | P1-5 | Question bank enriched from awardee experiences | parked |
+| P1-6 | Voice-first composer: voice input is the default mode and the transcript becomes editable once listening stops (supersedes P1-1's read-only rule per user feedback #2) | done |
 
 ## Known follow-ups (small, non-blocking)
 
@@ -94,6 +95,16 @@ direction (2026-08-17); first task is voice input (P1-1).
 ## Progress log
 
 <!-- Newest first. Format: YYYY-MM-DD · TASK-ID · what changed · notes for next session -->
+
+- 2026-08-17 · P1-6 · feat(interview): voice-first composer with editable
+  transcript (user feedback #2). The composer now defaults to voice mode
+  (typing remains one click away and is the fallback on unsupported
+  browsers). The transcript stays read-only while the mic is live, but after
+  stopping the candidate can edit the text before sending: new
+  `useVoiceInput.setText` drives the now-editable field, edits reset the
+  sentence-gap heuristic, and `checked` suppresses the unsupported-browser
+  flash on first paint. Copy updated in both locales (`voiceEditableNote`
+  replaces `voiceNonEditableNote`). Gates: lint, typecheck, test, build.
 
 - 2026-08-17 · P1-4 · feat(report): report history for multiple attempts
   (user feedback #1). Reports now live in a `substansi-lpdp:reports` list
