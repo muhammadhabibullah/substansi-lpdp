@@ -515,9 +515,9 @@ export function ReportScreen() {
                       {c.report.evidenceTitle}
                     </p>
                     <ul className="space-y-2">
-                      {dimension.quotes.map((quote) => (
+                      {dimension.quotes.map((quote, quoteIndex) => (
                         <li
-                          key={quote}
+                          key={`${dimension.id}-quote-${quoteIndex}`}
                           className="border-l-2 border-primary/40 pl-3 italic text-muted-foreground"
                         >
                           “{quote}”
@@ -533,8 +533,8 @@ export function ReportScreen() {
                       {c.report.strengthsTitle}
                     </p>
                     <ul className="list-inside list-disc space-y-1 text-muted-foreground">
-                      {dimension.strengths.map((item) => (
-                        <li key={item}>{item}</li>
+                      {dimension.strengths.map((item, itemIndex) => (
+                        <li key={`${dimension.id}-strength-${itemIndex}`}>{item}</li>
                       ))}
                     </ul>
                   </div>
@@ -546,8 +546,8 @@ export function ReportScreen() {
                       {c.report.weaknessesTitle}
                     </p>
                     <ul className="list-inside list-disc space-y-1 text-muted-foreground">
-                      {dimension.improvements.map((item) => (
-                        <li key={item}>{item}</li>
+                      {dimension.improvements.map((item, itemIndex) => (
+                        <li key={`${dimension.id}-improvement-${itemIndex}`}>{item}</li>
                       ))}
                     </ul>
                   </div>
@@ -628,7 +628,7 @@ export function ReportScreen() {
           <CardContent>
             <ol className="space-y-3">
               {report.nextSteps.map((step, index) => (
-                <li key={step} className="flex gap-3 text-sm">
+                <li key={`next-step-${index}`} className="flex gap-3 text-sm">
                   <span
                     aria-hidden
                     className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary"
