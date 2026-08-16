@@ -6,7 +6,7 @@ Instructions for AI coding agents (and humans) working in this repository.
 
 **Substansi LPDP** — an open-source, fully static web app that simulates the LPDP
 Seleksi Substansi (wawancara) with a three-panelist AI board (Akademisi, Psikolog,
-Unsur LPDP), conducted primarily in Bahasa Indonesia, ending with a rubric-scored
+Tim LPDP), conducted primarily in Bahasa Indonesia, ending with a rubric-scored
 report.
 
 - **`PLAN.md` is the product/architecture source of truth.** Read it before making

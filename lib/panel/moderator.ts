@@ -20,7 +20,7 @@ import type {
 } from '../types';
 import { docLabel, primaryAcademicDoc } from '../documents';
 import { getPhase, shouldWrapUp } from './phases';
-import { isPanelistId, panelistLabel } from './personas';
+import { isPanelistId, PANELIST_IDS, panelistLabel } from './personas';
 
 export interface ModeratorDecision {
   panelist: PanelistId;
@@ -150,22 +150,30 @@ function buildModeratorMessages(context: ModeratorContext): CoreMessage[] {
     'PEWAWANCARA YANG TERSEDIA:',
     '- "akademisi": profesor di bidang kandidat. Menguji rencana studi/riset, metodologi, penguasaan bidang, kesesuaian kampus, dan bahasa Inggris akademik.',
     '- "psikolog": menguji autentisitas motivasi, resiliensi, kesadaran diri, kesiapan personal, dan konsistensi jawaban vs dokumen.',
-    '- "lpdp": perwakilan LPDP. Menguji nasionalisme, komitmen kembali ke Indonesia, dan rencana kontribusi yang konkret dan terukur.',
+    '- "lpdp": Tim LPDP (perwakilan LPDP/Kemenkeu). Menguji nasionalisme, komitmen kembali ke Indonesia, dan rencana kontribusi yang konkret dan terukur.',
     '',
     'PRINSIP MEMILIH:',
     `1. Pemimpin tahap ini adalah "${phase.lead}". Utamakan dia, tetapi jangan biarkan satu orang bicara dua kali berturut-turut jika ada pewawancara lain yang relevan.`,
     `2. Pewawancara yang boleh bicara pada tahap ini: ${phase.participants.join(', ')}.`,
-    '3. Jika jawaban terakhir kandidat mengandung klaim tanpa bukti, kontradiksi dengan dokumen, atau jawaban normatif — perintahkan menggali itu.',
-    '4. Jika kandidat sudah menjawab tuntas, pindah ke aspek lain yang belum diuji pada tahap ini.',
-    '5. Directive harus SPESIFIK dan merujuk isi jawaban atau dokumen kandidat. Contoh baik: "Kejar kontradiksi antara klaim memimpin tim 20 orang dan CV yang hanya menyebut anggota tim."',
+    '3. Jatah waktu bertanya tiap pewawancara sekitar 15–20 menit selama seluruh sesi: Akademisi di pendalaman rencana studi, Psikolog di motivasi & kepribadian, Tim LPDP di nasionalisme & kontribusi. Seimbangkan giliran memakai jumlah pertanyaan tiap pewawancara di bawah — jangan beri giliran baru ke pewawancara yang sudah jauh lebih banyak bicara, kecuali ada alasan mendesak.',
+    '4. Pewawancara lain boleh menyela dengan SATU pertanyaan lanjutan singkat bila jawaban kandidat memancingnya — tetapi setelah itu kembalikan giliran ke pemimpin tahap.',
+    '5. Jika jawaban terakhir kandidat mengandung klaim tanpa bukti, kontradiksi dengan dokumen, atau jawaban normatif — perintahkan menggali itu.',
+    '6. Jika kandidat sudah menjawab tuntas, pindah ke aspek lain yang belum diuji pada tahap ini.',
+    '7. Directive harus SPESIFIK dan merujuk isi jawaban atau dokumen kandidat. Contoh baik: "Kejar kontradiksi antara klaim memimpin tim 20 orang dan CV yang hanya menyebut anggota tim."',
     '',
     'FORMAT KELUARAN: JSON mentah saja, tanpa penjelasan, tanpa markdown:',
     '{"panelist":"akademisi|psikolog|lpdp","directive":"satu instruksi dalam Bahasa Indonesia, maksimal 2 kalimat"}',
   ].join('\n');
 
+  const questionCounts = PANELIST_IDS.map((id) => {
+    const asked = context.history.filter((turn) => turn.speaker === id).length;
+    return `${panelistLabel(id)} ${asked}`;
+  }).join(', ');
+
   const user = [
     `TAHAP: ${context.phase} (${phase.minutes} menit dijatah)`,
     `PERTANYAAN PADA TAHAP INI: ${context.questionsInPhase}`,
+    `JUMLAH PERTANYAAN SEJAUH INI: ${questionCounts}`,
     `SISA WAKTU WAWANCARA: ${Math.round(context.remainingMs / 60_000)} menit`,
     `PEWAWANCARA TERAKHIR: ${context.lastSpeaker ?? '(belum ada)'}`,
     shouldWrapUp(context.elapsedMs)

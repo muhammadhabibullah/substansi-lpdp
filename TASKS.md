@@ -35,8 +35,8 @@ direction (2026-08-17); first task is voice input (P1-1).
 
 | ID | Task | Status |
 |---|---|---|
-| M3-1 | `lib/panel/phases.ts`: 6-phase state machine with per-phase time budgets (5/10/15/10/12/8 min), transitions on elapsed time + moderator signal | done |
-| M3-2 | `lib/panel/personas.ts`: system prompts for Akademisi (field-derived), Psikolog, Unsur LPDP per PLAN §1; prompt-injection fencing of document excerpts | done |
+| M3-1 | `lib/panel/phases.ts`: 6-phase state machine with per-phase time budgets (5/10/15/10/15/5 min since P1-7), transitions on elapsed time + moderator signal | done |
+| M3-2 | `lib/panel/personas.ts`: system prompts for Akademisi (field-derived), Psikolog, Tim LPDP per PLAN §1; prompt-injection fencing of document excerpts | done |
 | M3-3 | `lib/panel/moderator.ts`: cheap next-speaker + directive step (phase, elapsed time, last exchange → panelist + probing directive) | done |
 | M3-4 | Interview chat UI: streaming responses, panelist avatars/labels, visible 60-min countdown, end-early button, natural wrap-up as time runs out | done |
 | M3-5 | English-switching behavior for luar-negeri applicants (Akademisi mid-interview switches; panel follows user's language) | done |
@@ -80,6 +80,7 @@ direction (2026-08-17); first task is voice input (P1-1).
 | P1-4 | Report history: multiple reports (one per attempt) with a viewable/deletable history list on the report page | done |
 | P1-5 | Question bank enriched from awardee experiences | parked |
 | P1-6 | Voice-first composer: voice input is the default mode and the transcript becomes editable once listening stops (supersedes P1-1's read-only rule per user feedback #2) | done |
+| P1-7 | Per-role time model: each role leads 15–20 min (Akademisi 15', Psikolog 20', Tim LPDP 15' + opening/closing) within the 60' total, follow-up interjections allowed in any phase, and "Unsur LPDP" renamed to "Tim LPDP" (user feedback #3) | done |
 
 ## Known follow-ups (small, non-blocking)
 
@@ -95,6 +96,18 @@ direction (2026-08-17); first task is voice input (P1-1).
 ## Progress log
 
 <!-- Newest first. Format: YYYY-MM-DD · TASK-ID · what changed · notes for next session -->
+
+- 2026-08-17 · P1-7 · feat(panel): per-role time blocks, follow-ups, and
+  "Tim LPDP" rename (user feedback #3). Phase budgets rebalanced to
+  5/10/15/10/15/5 so each role leads 15–20 min of questioning: Akademisi 15'
+  (study plan), Psikolog 20' (motivation + personality), Tim LPDP 15'
+  (contribution) plus the LPDP-led opening/closing (closing cap lowered 4→3).
+  All three panelists now participate in every phase so any role may interject
+  a short follow-up mid-block; the moderator prompt states the 15–20 min
+  per-role allocation and the follow-up rule, and now sees per-panelist
+  question counts to balance turns. Renamed "Unsur LPDP" → "Tim LPDP" across
+  prompts, i18n (id+en), README, PLAN, AGENTS. Gates: lint, typecheck, test,
+  build.
 
 - 2026-08-17 · P1-6 · feat(interview): voice-first composer with editable
   transcript (user feedback #2). The composer now defaults to voice mode

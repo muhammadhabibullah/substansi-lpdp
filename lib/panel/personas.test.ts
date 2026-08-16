@@ -97,7 +97,7 @@ describe('panelist identity helpers', () => {
   it('labels each panelist', () => {
     expect(panelistLabel('akademisi')).toBe('Akademisi');
     expect(panelistLabel('psikolog')).toBe('Psikolog');
-    expect(panelistLabel('lpdp')).toBe('Unsur LPDP');
+    expect(panelistLabel('lpdp')).toBe('Tim LPDP');
   });
 });
 
@@ -228,7 +228,7 @@ describe('buildPanelistMessages', () => {
       (message) =>
         message.role === 'user' && String(message.content).includes('Pertanyaan LPDP.'),
     );
-    expect(String(relayed?.content)).toContain('[Unsur LPDP berkata kepada kandidat]');
+    expect(String(relayed?.content)).toContain('[Tim LPDP berkata kepada kandidat]');
   });
 
   it('caps the transcript window', () => {

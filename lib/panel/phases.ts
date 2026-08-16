@@ -1,10 +1,16 @@
 /**
  * lib/panel/phases.ts — the six-phase interview state machine (PLAN §3).
  *
- * Budgets: 5 / 10 / 15 / 10 / 12 / 8 minutes = 60 minutes total. Phases advance
- * on elapsed time, but only at a turn boundary and only after the phase has had
- * a minimum number of exchanges, so a fast talker cannot skip a whole phase and
- * a slow one cannot stall the interview forever.
+ * Budgets: 5 / 10 / 15 / 10 / 15 / 5 minutes = 60 minutes total. Each role
+ * leads blocks totalling 15–20 minutes of asking time: Akademisi 15'
+ * (study plan), Psikolog 20' (motivation + personality), Tim LPDP 15'
+ * (contribution) on top of the LPDP-led opening and closing. All three
+ * panelists participate in every phase, so any role may interject a short
+ * follow-up mid-way through another role's block when an answer demands it.
+ *
+ * Phases advance on elapsed time, but only at a turn boundary and only after
+ * the phase has had a minimum number of exchanges, so a fast talker cannot
+ * skip a whole phase and a slow one cannot stall the interview forever.
  *
  * Pure module — no LLM calls, no browser APIs. Unit-tested.
  */
@@ -49,7 +55,7 @@ export const PHASES: readonly PhaseDefinition[] = [
     id: 'studyPlan',
     minutes: 15,
     lead: 'akademisi',
-    participants: ['akademisi', 'psikolog'],
+    participants: ['akademisi', 'psikolog', 'lpdp'],
     minQuestions: 3,
     maxQuestions: 8,
   },
@@ -57,13 +63,13 @@ export const PHASES: readonly PhaseDefinition[] = [
     id: 'personality',
     minutes: 10,
     lead: 'psikolog',
-    participants: ['psikolog', 'lpdp'],
+    participants: ['psikolog', 'lpdp', 'akademisi'],
     minQuestions: 2,
     maxQuestions: 6,
   },
   {
     id: 'contribution',
-    minutes: 12,
+    minutes: 15,
     lead: 'lpdp',
     participants: ['lpdp', 'psikolog', 'akademisi'],
     minQuestions: 3,
@@ -71,11 +77,11 @@ export const PHASES: readonly PhaseDefinition[] = [
   },
   {
     id: 'closing',
-    minutes: 8,
+    minutes: 5,
     lead: 'lpdp',
     participants: ['lpdp', 'akademisi', 'psikolog'],
     minQuestions: 1,
-    maxQuestions: 4,
+    maxQuestions: 3,
   },
 ] as const;
 

@@ -183,7 +183,7 @@ const PHASE_GUIDANCE: Record<PhaseId, string> = {
   personality:
     'TAHAP SAAT INI — Kepribadian, kesiapan & konsistensi: Psikolog memimpin. Uji resiliensi, kesadaran diri, kesiapan personal/keluarga, dan konsistensi jawaban dengan dokumen.',
   contribution:
-    'TAHAP SAAT INI — Nasionalisme & rencana kontribusi: Unsur LPDP memimpin. Uji komitmen kembali ke Indonesia dan paksa rencana kontribusi menjadi konkret dan terukur.',
+    'TAHAP SAAT INI — Nasionalisme & rencana kontribusi: Tim LPDP memimpin. Uji komitmen kembali ke Indonesia dan paksa rencana kontribusi menjadi konkret dan terukur.',
   closing:
     'TAHAP SAAT INI — Penutup: ajukan pertanyaan terakhir yang masih menggantung, lalu beri kandidat kesempatan menyampaikan closing statement. Jangan membuka topik baru yang berat.',
 };
@@ -289,7 +289,7 @@ export function panelistLabel(panelist: PanelistId): string {
     case 'psikolog':
       return 'Psikolog';
     case 'lpdp':
-      return 'Unsur LPDP';
+      return 'Tim LPDP';
   }
 }
 

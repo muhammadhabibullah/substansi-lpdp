@@ -30,7 +30,7 @@ const id = {
     appName: 'Substansi LPDP',
     tagline: 'Simulasi wawancara Seleksi Substansi LPDP dengan panel AI',
     description:
-      'Latihan wawancara Seleksi Substansi LPDP bersama tiga pewawancara AI (Akademisi, Psikolog, Unsur LPDP), lengkap dengan laporan penilaian berbasis rubrik. Gratis, open source, dan berjalan sepenuhnya di browser Anda.',
+      'Latihan wawancara Seleksi Substansi LPDP bersama tiga pewawancara AI (Akademisi, Psikolog, Tim LPDP), lengkap dengan laporan penilaian berbasis rubrik. Gratis, open source, dan berjalan sepenuhnya di browser Anda.',
   },
 
   nav: {
@@ -91,7 +91,7 @@ const id = {
     heroBadge: 'Open source · Gratis · Berjalan di browser Anda',
     heroTitle: 'Latih wawancara Seleksi Substansi LPDP Anda',
     heroSubtitle:
-      'Hadapi panel tiga pewawancara AI — Akademisi, Psikolog, dan Unsur LPDP — hingga 60 menit dalam Bahasa Indonesia, lalu dapatkan laporan penilaian dengan kutipan bukti dari jawaban Anda sendiri.',
+      'Hadapi panel tiga pewawancara AI — Akademisi, Psikolog, dan Tim LPDP — hingga 60 menit dalam Bahasa Indonesia, lalu dapatkan laporan penilaian dengan kutipan bukti dari jawaban Anda sendiri.',
     ctaPrimary: 'Mulai persiapan',
     ctaSecondary: 'Atur kunci API',
     ctaResume: 'Lanjutkan wawancara',
@@ -146,7 +146,7 @@ const id = {
       initial: 'P',
     },
     lpdp: {
-      name: 'Unsur LPDP',
+      name: 'Tim LPDP',
       role: 'Perwakilan LPDP/Kemenkeu',
       focus:
         'Nasionalisme dan komitmen kembali ke Indonesia, rencana kontribusi yang konkret dan terukur, keselarasan dengan prioritas nasional, serta akuntabilitas dana.',
@@ -222,7 +222,7 @@ const id = {
     docProposalHelp: 'Fokus utama pendalaman oleh Akademisi untuk pelamar Doktor.',
     docEssay: 'Esai kontribusi',
     docEssayHelp:
-      'Komitmen kembali ke Indonesia dan rencana kontribusi pascastudi — fokus utama Unsur LPDP.',
+      'Komitmen kembali ke Indonesia dan rencana kontribusi pascastudi — fokus utama Tim LPDP.',
     dropzoneLabel: 'Jatuhkan berkas di sini atau klik untuk memilih',
     dropzoneHint: 'PDF, DOCX, atau TXT · maksimal {size}',
     pasteTab: 'Tempel teks',
@@ -361,7 +361,7 @@ const id = {
     },
     contribution: {
       name: 'Nasionalisme & rencana kontribusi',
-      goal: 'Unsur LPDP menguji komitmen kembali ke Indonesia dan rencana kontribusi yang terukur.',
+      goal: 'Tim LPDP menguji komitmen kembali ke Indonesia dan rencana kontribusi yang terukur.',
     },
     closing: {
       name: 'Pertanyaan penutup & closing statement',
@@ -663,7 +663,7 @@ const en: Copy = {
     appName: 'Substansi LPDP',
     tagline: 'LPDP Seleksi Substansi mock interview with an AI panel',
     description:
-      'Practise the LPDP Seleksi Substansi interview with three AI panelists (Academic, Psychologist, LPDP representative) and get a rubric-scored report. Free, open source, and runs entirely in your browser.',
+      'Practise the LPDP Seleksi Substansi interview with three AI panelists (Academic, Psychologist, LPDP Team) and get a rubric-scored report. Free, open source, and runs entirely in your browser.',
   },
 
   nav: {
@@ -724,7 +724,7 @@ const en: Copy = {
     heroBadge: 'Open source · Free · Runs in your browser',
     heroTitle: 'Practise your LPDP Seleksi Substansi interview',
     heroSubtitle:
-      'Face a three-panelist AI board — Academic, Psychologist, and LPDP representative — for up to 60 minutes in Bahasa Indonesia, then get a scored report with evidence quoted from your own answers.',
+      'Face a three-panelist AI board — Academic, Psychologist, and LPDP Team — for up to 60 minutes in Bahasa Indonesia, then get a scored report with evidence quoted from your own answers.',
     ctaPrimary: 'Start setup',
     ctaSecondary: 'Configure API key',
     ctaResume: 'Resume interview',
@@ -779,7 +779,7 @@ const en: Copy = {
       initial: 'P',
     },
     lpdp: {
-      name: 'LPDP representative',
+      name: 'LPDP Team',
       role: 'LPDP/Ministry of Finance official',
       focus:
         'Nationalism and commitment to return to Indonesia, concrete and measurable contribution plans, alignment with national priorities, and funding accountability.',
@@ -855,7 +855,7 @@ const en: Copy = {
     docProposalHelp: 'Primary material for the Academic deep dive for doctoral applicants.',
     docEssay: 'Contribution essay',
     docEssayHelp:
-      'Commitment to return to Indonesia and post-study contribution plan — the LPDP representative’s main focus.',
+      'Commitment to return to Indonesia and post-study contribution plan — the LPDP Team’s main focus.',
     dropzoneLabel: 'Drop a file here or click to choose',
     dropzoneHint: 'PDF, DOCX, or TXT · max {size}',
     pasteTab: 'Paste text',
@@ -990,7 +990,7 @@ const en: Copy = {
     },
     contribution: {
       name: 'Nationalism & contribution plan',
-      goal: 'The LPDP representative tests your commitment to return and your measurable contribution plan.',
+      goal: 'The LPDP Team tests your commitment to return and your measurable contribution plan.',
     },
     closing: {
       name: 'Closing questions & statement',

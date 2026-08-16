@@ -19,7 +19,7 @@ Open-source web app that simulates the **Seleksi Substansi (wawancara) LPDP** wi
 |---|---|---|
 | **Akademisi** | Professor in the *user's own field* (derived from uploaded study plan/proposal) | Depth of study plan, research feasibility, university/prodi fit, academic readiness, English follow-ups for overseas applicants |
 | **Psikolog** | Professional psychologist | Motivation authenticity, resilience, self-awareness, family/personal readiness to live abroad, stress questions, consistency of answers vs documents |
-| **Unsur LPDP** | LPDP/Kemenkeu representative | Nationalism & komitmen kembali ke Indonesia, rencana kontribusi konkret & terukur, alignment with national priorities, funding accountability, integrity |
+| **Tim LPDP** | LPDP/Kemenkeu representative | Nationalism & komitmen kembali ke Indonesia, rencana kontribusi konkret & terukur, alignment with national priorities, funding accountability, integrity |
 
 Panelists take turns naturally (a lightweight "moderator" model decides who speaks next), interrupt with follow-ups, and probe inconsistencies between answers and the uploaded documents.
 
@@ -93,7 +93,7 @@ lib/
   documents.ts             # file parsing: PDF (pdfjs), DOCX (mammoth), plain text
   panel/
     moderator.ts           # decides next speaker, phase transitions, time budget
-    personas.ts            # system prompts: akademisi / psikolog / unsur LPDP
+    personas.ts            # system prompts: akademisi / psikolog / tim LPDP
     phases.ts              # interview phase state machine
   rubric.ts                # scoring dimensions, weights, band descriptors
   i18n.ts                  # UI copy (id/en)
@@ -105,8 +105,14 @@ lib/
   2. Latar belakang & motivasi studi (10')
   3. Rencana studi / proposal riset — deep dive by Akademisi, incl. English segment if luar negeri (15')
   4. Kepribadian, kesiapan, konsistensi — Psikolog (10')
-  5. Nasionalisme & rencana kontribusi — Unsur LPDP (12')
-  6. Pertanyaan penutup & closing statement (8')
+  5. Nasionalisme & rencana kontribusi — Tim LPDP (15')
+  6. Pertanyaan penutup & closing statement (5')
+
+  Each role leads 15–20 minutes of questioning within the total: Akademisi 15'
+  (study plan), Psikolog 20' (motivation + personality), Tim LPDP 15'
+  (contribution) plus the LPDP-led opening and closing. Every panelist
+  participates in every phase, so a role may interject a short follow-up
+  mid-way through another panelist's block when an answer demands it.
 - **Moderator step** (cheap, small prompt): given phase, elapsed time, and last exchange → picks next panelist + a directive ("probe the inconsistency between his CV gap year and his claimed leadership").
 - **Panelist step**: full persona prompt + relevant document excerpts + conversation window → streamed question/response in character.
 - Documents are chunked at setup; each panelist gets the excerpts relevant to its focus (study plan → Akademisi; essay kontribusi → LPDP; CV → all).
@@ -129,8 +135,8 @@ Score 1–4 per dimension (mirroring "unsur penilaian" style), weighted to 100:
 | Motivasi & autentisitas | 10 | Psikolog |
 | Kepribadian, resiliensi & kesiapan psikologis | 10 | Psikolog |
 | Konsistensi jawaban vs dokumen | 10 | Psikolog |
-| Nasionalisme & komitmen kembali ke Indonesia | 15 | Unsur LPDP |
-| Rencana kontribusi: konkret & terukur | 15 | Unsur LPDP |
+| Nasionalisme & komitmen kembali ke Indonesia | 15 | Tim LPDP |
+| Rencana kontribusi: konkret & terukur | 15 | Tim LPDP |
 
 Report contents:
 - **Total score /100 + band**: Sangat Direkomendasikan / Direkomendasikan / Dipertimbangkan / Belum Direkomendasikan

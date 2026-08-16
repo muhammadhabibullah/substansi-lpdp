@@ -32,8 +32,8 @@ describe('phase table matches PLAN §3', () => {
     ]);
   });
 
-  it('uses the documented 5/10/15/10/12/8 minute budgets', () => {
-    expect(PHASES.map((phase) => phase.minutes)).toEqual([5, 10, 15, 10, 12, 8]);
+  it('uses the documented 5/10/15/10/15/5 minute budgets', () => {
+    expect(PHASES.map((phase) => phase.minutes)).toEqual([5, 10, 15, 10, 15, 5]);
   });
 
   it('totals a 60-minute interview', () => {
@@ -53,6 +53,26 @@ describe('phase table matches PLAN §3', () => {
       expect(phase.minQuestions).toBeLessThanOrEqual(phase.maxQuestions);
     }
   });
+
+  it('lets every panelist speak in every phase (follow-up interjections)', () => {
+    for (const phase of PHASES) {
+      expect([...phase.participants].sort()).toEqual(
+        ['akademisi', 'lpdp', 'psikolog'].sort(),
+      );
+    }
+  });
+
+  it('gives each role a 15–20 minute lead block', () => {
+    const leadMinutes: Record<string, number> = { akademisi: 0, psikolog: 0, lpdp: 0 };
+    for (const phase of PHASES) {
+      leadMinutes[phase.lead] = (leadMinutes[phase.lead] ?? 0) + phase.minutes;
+    }
+    // Akademisi leads the study-plan deep dive (15'), Psikolog motivation +
+    // personality (20'), Tim LPDP contribution (15') plus opening & closing.
+    expect(leadMinutes.akademisi).toBe(15);
+    expect(leadMinutes.psikolog).toBe(20);
+    expect(leadMinutes.lpdp).toBe(25);
+  });
 });
 
 describe('offsets and deadlines', () => {
@@ -63,7 +83,7 @@ describe('offsets and deadlines', () => {
   it('accumulates prior budgets', () => {
     expect(phaseStartOffsetMs('motivation')).toBe(5 * MINUTE);
     expect(phaseStartOffsetMs('studyPlan')).toBe(15 * MINUTE);
-    expect(phaseStartOffsetMs('closing')).toBe(52 * MINUTE);
+    expect(phaseStartOffsetMs('closing')).toBe(55 * MINUTE);
   });
 
   it('ends the last phase exactly at the hard stop', () => {
@@ -130,10 +150,12 @@ describe('decidePhase', () => {
   });
 
   it('finishes from the closing phase on its own budget', () => {
+    // The closing phase started a little early (53'); its 5' in-phase budget
+    // is spent (6' elapsed) and the minimum question count is met.
     const action = decidePhase({
       phase: 'closing',
-      elapsedMs: 58 * MINUTE,
-      phaseStartedMs: 50 * MINUTE,
+      elapsedMs: 59 * MINUTE,
+      phaseStartedMs: 53 * MINUTE,
       questionsInPhase: 2,
     });
     expect(action.type).toBe('finish');
@@ -142,9 +164,9 @@ describe('decidePhase', () => {
   it('finishes the closing phase at its question cap', () => {
     const action = decidePhase({
       phase: 'closing',
-      elapsedMs: 53 * MINUTE,
-      phaseStartedMs: 52 * MINUTE,
-      questionsInPhase: 4,
+      elapsedMs: 56 * MINUTE,
+      phaseStartedMs: 55 * MINUTE,
+      questionsInPhase: 3,
     });
     expect(action.type).toBe('finish');
   });
@@ -152,8 +174,8 @@ describe('decidePhase', () => {
   it('never advances past the last phase', () => {
     const action = decidePhase({
       phase: 'closing',
-      elapsedMs: 53 * MINUTE,
-      phaseStartedMs: 52 * MINUTE,
+      elapsedMs: 56 * MINUTE,
+      phaseStartedMs: 55 * MINUTE,
       questionsInPhase: 0,
     });
     expect(action.type).toBe('stay');

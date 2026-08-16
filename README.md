@@ -21,16 +21,18 @@ penilaian berbasis rubrik dengan kutipan bukti dari jawaban Anda sendiri.
 |---|---|---|
 | **Akademisi** | Profesor di bidang Anda (diturunkan dari dokumen) | Kedalaman rencana studi, kelayakan riset, kesesuaian prodi, kesiapan akademik, pendalaman bahasa Inggris |
 | **Psikolog** | Psikolog profesional | Autentisitas motivasi, resiliensi, kesadaran diri, kesiapan personal, konsistensi jawaban vs dokumen |
-| **Unsur LPDP** | Perwakilan LPDP/Kemenkeu | Nasionalisme, komitmen kembali ke Indonesia, rencana kontribusi konkret & terukur, akuntabilitas dana |
+| **Tim LPDP** | Perwakilan LPDP/Kemenkeu | Nasionalisme, komitmen kembali ke Indonesia, rencana kontribusi konkret & terukur, akuntabilitas dana |
 
 ### Alur
 
 1. **Persiapan** — isi profil program dan sertakan CV, rencana studi (Magister)
    atau proposal penelitian (Doktor), serta esai kontribusi. Semua diproses di
    browser.
-2. **Wawancara** — 6 tahap dengan jatah waktu 5/10/15/10/12/8 menit dan timer
-   60 menit yang terlihat. Panel bergantian, menggali inkonsistensi dengan
-   dokumen Anda, dan beralih ke bahasa Inggris jika tujuan Anda luar negeri.
+2. **Wawancara** — 6 tahap dengan jatah waktu 5/10/15/10/15/5 menit dan timer
+   60 menit yang terlihat. Setiap pewawancara memimpin blok bertanya 15–20
+   menit dan boleh menyela dengan pertanyaan lanjutan singkat di luar
+   bloknya. Panel menggali inkonsistensi dengan dokumen Anda dan beralih ke
+   bahasa Inggris jika tujuan Anda luar negeri.
 3. **Laporan** — skor 8 dimensi rubrik (total 100) + band rekomendasi, kutipan
    bukti, catatan tiap pewawancara, checklist indikator kuat/lemah, dan langkah
    perbaikan. Bisa diunduh sebagai Markdown atau dicetak ke PDF.
@@ -45,8 +47,8 @@ penilaian berbasis rubrik dengan kutipan bukti dari jawaban Anda sendiri.
 | Motivasi & autentisitas | 10 | Psikolog |
 | Kepribadian, resiliensi & kesiapan psikologis | 10 | Psikolog |
 | Konsistensi jawaban vs dokumen | 10 | Psikolog |
-| Nasionalisme & komitmen kembali ke Indonesia | 15 | Unsur LPDP |
-| Rencana kontribusi: konkret & terukur | 15 | Unsur LPDP |
+| Nasionalisme & komitmen kembali ke Indonesia | 15 | Tim LPDP |
+| Rencana kontribusi: konkret & terukur | 15 | Tim LPDP |
 
 Skor 1–4 per dimensi, dibobot ke total 100, lalu dipetakan ke band: Sangat
 Direkomendasikan (≥85) · Direkomendasikan (≥70) · Dipertimbangkan (≥55) · Belum
@@ -170,9 +172,11 @@ rubric-scored report.
 1. **Setup** — fill in your programme profile and add your CV, study plan
    (master's) or research proposal (doctorate), and contribution essay. Parsed
    in-browser.
-2. **Interview** — six phases on a visible 60-minute clock (5/10/15/10/12/8 min).
-   The panel takes turns, probes inconsistencies against your documents, and
-   switches to English mid-session if your destination is overseas.
+2. **Interview** — six phases on a visible 60-minute clock (5/10/15/10/15/5 min).
+   Each panelist leads a 15–20 minute block of questioning and may interject a
+   short follow-up outside their block. The panel probes inconsistencies
+   against your documents and switches to English mid-session if your
+   destination is overseas.
 3. **Report** — eight weighted rubric dimensions scored out of 100, a
    recommendation band, evidence quotes, per-panelist narratives, a strong/weak
    signal checklist, and concrete next steps. Export as Markdown or print to PDF.
@@ -183,7 +187,7 @@ rubric-scored report.
 |---|---|---|
 | **Academic** | A professor in your own field, derived from your documents | Study-plan depth, research feasibility, programme fit, academic readiness, English follow-ups |
 | **Psychologist** | Professional psychologist | Motivation authenticity, resilience, self-awareness, personal readiness, consistency vs documents |
-| **LPDP representative** | LPDP/Ministry of Finance official | Nationalism, commitment to return to Indonesia, concrete and measurable contribution plans, funding accountability |
+| **LPDP Team** | LPDP/Ministry of Finance official | Nationalism, commitment to return to Indonesia, concrete and measurable contribution plans, funding accountability |
 
 ## Bring your own key
 
