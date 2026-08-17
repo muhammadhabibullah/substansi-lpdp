@@ -92,9 +92,11 @@ lib/
   llm.ts                   # provider abstraction (browser → OpenAI-compatible endpoint)
   documents.ts             # file parsing: PDF (pdfjs), DOCX (mammoth), plain text
   panel/
+    engine.ts              # session lifecycle & phase bookkeeping (deterministic)
     moderator.ts           # decides next speaker, phase transitions, time budget
     personas.ts            # system prompts: akademisi / psikolog / tim LPDP
     phases.ts              # interview phase state machine
+    notetaker.ts           # silent per-answer annotation for report evidence
   rubric.ts                # scoring dimensions, weights, band descriptors
   i18n.ts                  # UI copy (id/en)
 ```

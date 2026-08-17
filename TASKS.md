@@ -102,6 +102,12 @@ direction (2026-08-17); first task is voice input (P1-1).
 
 <!-- Newest first. Format: YYYY-MM-DD · TASK-ID · what changed · notes for next session -->
 
+- 2026-08-17 · ad-hoc · docs: PLAN.md §3 Key modules and AGENTS.md Directory
+  layout now list `lib/panel/engine.ts` (session lifecycle & phase
+  bookkeeping) and `lib/panel/notetaker.ts` (silent per-answer annotation),
+  so the module map covers every file in `lib/panel/`; moderator, personas,
+  and phases entries unchanged. Gate: typecheck pass.
+
 - 2026-08-17 · P1-10 · feat(panel): strict one-interjection-per-block cap.
   P1-8 limited off-block interjections to one short follow-up via prompt
   wording only; now the cap is enforced deterministically in

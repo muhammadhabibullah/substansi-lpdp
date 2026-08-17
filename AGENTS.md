@@ -65,7 +65,8 @@ report.
   `fetch` to an LLM endpoint from components.
 - **State:** React state + `localStorage` (crash recovery). No database.
 - **Directory layout:** follow §3 of `PLAN.md` (`app/{setup,interview,report,settings}`,
-  `lib/{llm,documents,rubric,i18n}`, `lib/panel/{moderator,personas,phases}`).
+  `lib/{llm,documents,rubric,i18n}`,
+  `lib/panel/{engine,moderator,personas,phases,notetaker}`).
 - **UI language:** all user-facing copy in Bahasa Indonesia with English variants,
   routed through `lib/i18n.ts` — no hardcoded copy in components.
 - **Interview content** (personas, phases, rubric weights) must match PLAN.md
