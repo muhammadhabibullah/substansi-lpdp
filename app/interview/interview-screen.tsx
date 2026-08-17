@@ -5,10 +5,10 @@ import Link from 'next/link';
 import {
   AlertTriangle,
   Clock,
-  Keyboard,
   Loader2,
   Mic,
-  MicOff,
+  Pause,
+  Play,
   RotateCcw,
   Send,
   SkipForward,
@@ -50,11 +50,7 @@ export function InterviewScreen() {
 
   const [draft, setDraft] = React.useState('');
   const [confirmEnd, setConfirmEnd] = React.useState(false);
-  // Voice-first answering (P1-6): speaking is the default; typing is the
-  // fallback for unsupported browsers or personal preference.
-  const [inputMode, setInputMode] = React.useState<'text' | 'voice'>('voice');
   const scrollRef = React.useRef<HTMLDivElement>(null);
-  const inputRef = React.useRef<HTMLTextAreaElement>(null);
 
   const { session, busy, streaming, error, warning } = interview;
   const errorDescription = error ? describeInterviewError(error, c) : null;
@@ -93,22 +89,6 @@ export function InterviewScreen() {
   const startNew = () => {
     interview.reset();
     interview.start();
-  };
-
-  const submit = () => {
-    const text = draft.trim();
-    if (!text || busy) return;
-    setDraft('');
-    interview.submitAnswer(text);
-    inputRef.current?.focus();
-  };
-
-  /** Submit the spoken answer — finalised (and optionally edited) text. */
-  const submitVoice = () => {
-    if (busy) return;
-    const text = voice.finish();
-    if (!text) return;
-    interview.submitAnswer(text);
   };
 
   // Never keep the microphone open while the panel is speaking/working.
@@ -325,89 +305,25 @@ export function InterviewScreen() {
         </Alert>
       ) : null}
 
-      {/* Answer composer — typing and voice input modes (P1-1) */}
-      <div className="mt-4 space-y-2">
-        {voice.supported ? (
-          <div role="group" aria-label={c.interview.title} className="flex items-center gap-1">
-            <Button
-              variant={inputMode === 'text' ? 'secondary' : 'outline'}
-              size="sm"
-              aria-pressed={inputMode === 'text'}
-              onClick={() => {
-                voice.stop();
-                setInputMode('text');
-                inputRef.current?.focus();
-              }}
-            >
-              <Keyboard aria-hidden />
-              {c.interview.inputModeText}
-            </Button>
-            <Button
-              variant={inputMode === 'voice' ? 'secondary' : 'outline'}
-              size="sm"
-              aria-pressed={inputMode === 'voice'}
-              onClick={() => setInputMode('voice')}
-            >
-              <Mic aria-hidden />
-              {c.interview.inputModeVoice}
-            </Button>
-          </div>
-        ) : null}
-
-        {inputMode === 'voice' && voice.supported ? (
-          <VoiceComposer voice={voice} disabled={composerBusy} />
-        ) : (
-          <Textarea
-            ref={inputRef}
-            value={draft}
-            rows={3}
-            disabled={composerBusy}
-            placeholder={
-              busy || interview.preparingDocs
-                ? c.interview.inputPlaceholderWaiting
-                : c.interview.inputPlaceholder
-            }
-            onChange={(event) => setDraft(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault();
-                submit();
-              }
-            }}
-            aria-label={c.interview.inputPlaceholder}
-          />
-        )}
-
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-xs text-muted-foreground">
-            {inputMode === 'voice'
-              ? !voice.checked
-                ? ''
-                : voice.supported
-                  ? c.interview.voiceEditableNote
-                  : c.interview.voiceUnsupported
-              : c.interview.sendHint}
-          </p>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">
-              {f(c.interview.answersCount, {
-                count: session.turns.filter((turn) => turn.speaker === 'user').length,
-              })}
-            </span>
-            <Button
-              onClick={inputMode === 'voice' && voice.supported ? submitVoice : submit}
-              disabled={
-                composerBusy ||
-                (inputMode === 'voice' && voice.supported
-                  ? combineTranscript(voice.transcript, voice.interim).length === 0
-                  : draft.trim().length === 0)
-              }
-            >
-              <Send aria-hidden />
-              {c.interview.send}
-            </Button>
-          </div>
-        </div>
+      {/* Answer composer — WhatsApp-style unified text & voice input (P1-11) */}
+      <div className="mt-4">
+        <AnswerComposer
+          voice={voice}
+          disabled={composerBusy}
+          draft={draft}
+          setDraft={setDraft}
+          onSubmitText={(text) => {
+            setDraft('');
+            interview.submitAnswer(text);
+          }}
+          onSubmitVoice={() => {
+            const text = voice.finish();
+            if (text) interview.submitAnswer(text);
+          }}
+          metaText={f(c.interview.answersCount, {
+            count: session.turns.filter((turn) => turn.speaker === 'user').length,
+          })}
+        />
       </div>
 
       {/* End-early confirmation */}
@@ -448,22 +364,74 @@ export function InterviewScreen() {
   );
 }
 
-/* ── Voice composer (P1-1) ──────────────────────────────────────────────── */
+/* ── WhatsApp-style answer composer (P1-11) ─────────────────────────────── */
 
-interface VoiceComposerProps {
+interface AnswerComposerProps {
   voice: UseVoiceInput;
   /** True while the panel is busy or the session has ended. */
   disabled: boolean;
+  draft: string;
+  setDraft: (text: string) => void;
+  onSubmitText: (text: string) => void;
+  onSubmitVoice: () => void;
+  /** Right-side footer meta (answer count). */
+  metaText: string;
 }
 
 /**
- * Voice answer panel. The transcript is read-only while the mic is live
- * (recognition overwrites it) and becomes an editable field once listening
- * stops, so the candidate can fix the text before sending (P1-6).
+ * Unified WhatsApp-style composer with three states:
+ * - idle: rounded text field whose right icon swaps mic → send while typing;
+ * - recording/paused: discard · red dot + timer + waveform pill · pause/resume ·
+ *   finish — no live text is shown while the mic is open;
+ * - review: the transcript becomes an editable field once recording finishes,
+ *   so the candidate can correct it before sending (P1-6).
  */
-function VoiceComposer({ voice, disabled }: VoiceComposerProps) {
+function AnswerComposer({
+  voice,
+  disabled,
+  draft,
+  setDraft,
+  onSubmitText,
+  onSubmitVoice,
+  metaText,
+}: AnswerComposerProps) {
   const { c } = useI18n();
-  const visibleText = combineTranscript(voice.transcript, voice.interim);
+  /** True between tapping the mic and finishing the recording for review. */
+  const [voiceSession, setVoiceSession] = React.useState(false);
+  const inputRef = React.useRef<HTMLTextAreaElement>(null);
+
+  // A recognition error ends the recording flow so the alert is visible and
+  // any captured words stay editable in the review state.
+  const voiceError = voice.error;
+  React.useEffect(() => {
+    if (voiceError) setVoiceSession(false);
+  }, [voiceError]);
+
+  const recording = voiceSession && voice.listening;
+  const paused = voiceSession && !voice.listening;
+  const reviewing = !voiceSession && voice.transcript.trim().length > 0;
+  const spokenLength = combineTranscript(voice.transcript, voice.interim).length;
+
+  const startRecording = () => {
+    setVoiceSession(true);
+    voice.start();
+  };
+  const discardRecording = () => {
+    voice.stop();
+    voice.clear();
+    setVoiceSession(false);
+  };
+  /** Finish speaking: the transcript opens editable for review before send. */
+  const finishToReview = () => {
+    voice.stop();
+    setVoiceSession(false);
+  };
+  const submitTyped = () => {
+    const text = draft.trim();
+    if (!text || disabled) return;
+    onSubmitText(text);
+    inputRef.current?.focus();
+  };
 
   const errorText =
     voice.error === 'denied'
@@ -474,6 +442,18 @@ function VoiceComposer({ voice, disabled }: VoiceComposerProps) {
           ? c.interview.voiceOtherError
           : null;
 
+  const hint = recording
+    ? c.interview.voiceListening
+    : paused
+      ? c.interview.voicePaused
+      : reviewing
+        ? c.interview.voiceEditableNote
+        : !voice.checked
+          ? ''
+          : voice.supported
+            ? c.interview.voiceIdleHint
+            : `${c.interview.voiceUnsupported} ${c.interview.sendHint}`;
+
   return (
     <div className="space-y-2">
       {errorText ? (
@@ -483,58 +463,221 @@ function VoiceComposer({ voice, disabled }: VoiceComposerProps) {
         </Alert>
       ) : null}
 
-      <Textarea
-        readOnly={voice.listening}
-        value={visibleText}
-        rows={3}
-        placeholder={c.interview.voicePlaceholder}
-        aria-label={c.interview.voiceTranscriptLabel}
-        aria-readonly={voice.listening}
-        onChange={(event) => voice.setText(event.target.value)}
-        className={voice.listening ? 'bg-muted/40' : undefined}
-      />
-
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p
-          className={cn(
-            'flex items-center gap-1.5 text-xs',
-            voice.listening ? 'text-foreground' : 'text-muted-foreground',
-          )}
-          aria-live="polite"
-        >
-          {voice.listening ? (
-            <>
-              <Mic aria-hidden className="size-3.5 animate-pulse text-destructive" />
-              {c.interview.voiceListening}
-            </>
-          ) : (
-            c.interview.voiceIdleHint
-          )}
-        </p>
+      {recording || paused ? (
         <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={voice.clear}
-            disabled={disabled || visibleText.length === 0}
+          <ComposerIconButton
+            label={c.interview.voiceDiscard}
+            onClick={discardRecording}
           >
             <Trash2 aria-hidden />
-            {c.interview.voiceDiscard}
-          </Button>
-          <Button
-            variant={voice.listening ? 'destructive' : 'secondary'}
-            size="sm"
-            onClick={() => (voice.listening ? voice.stop() : voice.start())}
+          </ComposerIconButton>
+
+          <div className="flex h-12 min-w-0 flex-1 items-center gap-3 rounded-full border border-border bg-card px-4">
+            <span
+              className={cn(
+                'size-2.5 shrink-0 rounded-full bg-destructive',
+                recording && 'animate-pulse',
+              )}
+              aria-hidden
+            />
+            <span className="shrink-0 font-mono text-sm font-semibold tabular-nums">
+              {formatRecClock(voice.elapsedMs)}
+            </span>
+            <Waveform active={recording} />
+            <span className="sr-only" role="status">
+              {recording ? c.interview.voiceListening : c.interview.voicePaused}
+            </span>
+          </div>
+
+          <ComposerIconButton
+            label={recording ? c.interview.voicePause : c.interview.voiceResume}
+            onClick={() => (recording ? voice.stop() : voice.start())}
             disabled={disabled}
           >
-            {voice.listening ? <MicOff aria-hidden /> : <Mic aria-hidden />}
-            {voice.listening ? c.interview.voiceStop : c.interview.voiceStart}
-          </Button>
+            {recording ? <Pause aria-hidden /> : <Play aria-hidden />}
+          </ComposerIconButton>
+
+          <SendButton
+            label={c.interview.voiceFinish}
+            onClick={finishToReview}
+            disabled={spokenLength === 0}
+          />
         </div>
+      ) : reviewing ? (
+        <div className="space-y-2">
+          <Textarea
+            autoFocus
+            value={voice.transcript}
+            rows={3}
+            onChange={(event) => voice.setText(event.target.value)}
+            aria-label={c.interview.voiceTranscriptLabel}
+          />
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1">
+              <ComposerIconButton
+                label={c.interview.voiceDiscard}
+                onClick={() => voice.clear()}
+              >
+                <Trash2 aria-hidden />
+              </ComposerIconButton>
+              <ComposerIconButton
+                label={c.interview.voiceStart}
+                onClick={startRecording}
+                disabled={disabled}
+              >
+                <Mic aria-hidden />
+              </ComposerIconButton>
+            </div>
+            <SendButton
+              label={c.interview.send}
+              onClick={onSubmitVoice}
+              disabled={disabled || voice.transcript.trim().length === 0}
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="flex items-end gap-2">
+          <div className="min-w-0 flex-1 rounded-3xl border border-border bg-card px-4 py-2.5">
+            <textarea
+              ref={(node) => {
+                inputRef.current = node;
+                if (node) autoGrow(node);
+              }}
+              value={draft}
+              rows={1}
+              disabled={disabled}
+              placeholder={
+                disabled ? c.interview.inputPlaceholderWaiting : c.interview.inputPlaceholder
+              }
+              onChange={(event) => {
+                setDraft(event.target.value);
+                autoGrow(event.target);
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' && !event.shiftKey) {
+                  event.preventDefault();
+                  submitTyped();
+                }
+              }}
+              aria-label={c.interview.inputPlaceholder}
+              className="max-h-40 w-full resize-none bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+            />
+          </div>
+          {voice.supported && draft.trim().length === 0 ? (
+            <ComposerIconButton
+              label={c.interview.voiceStart}
+              onClick={startRecording}
+              disabled={disabled}
+              className="size-12"
+            >
+              <Mic aria-hidden className="size-6" />
+            </ComposerIconButton>
+          ) : (
+            <SendButton
+              label={c.interview.send}
+              onClick={submitTyped}
+              disabled={disabled || draft.trim().length === 0}
+            />
+          )}
+        </div>
+      )}
+
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="min-w-0 text-xs text-muted-foreground">{hint}</p>
+        <span className="shrink-0 text-xs text-muted-foreground">{metaText}</span>
       </div>
 
-      <p className="text-xs text-muted-foreground">{c.interview.voicePrivacyNote}</p>
+      {voice.supported ? (
+        <p className="text-xs text-muted-foreground">{c.interview.voicePrivacyNote}</p>
+      ) : null}
     </div>
+  );
+}
+
+/* ── Composer primitives ─────────────────────────────────────────────────── */
+
+/** WhatsApp-style `m:ss` recording clock. */
+function formatRecClock(ms: number): string {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, '0')}`;
+}
+
+/** Grow the idle composer textarea with its content (capped). */
+function autoGrow(node: HTMLTextAreaElement) {
+  node.style.height = 'auto';
+  node.style.height = `${Math.min(node.scrollHeight, 160)}px`;
+}
+
+/** Decorative waveform bar heights (px) for the recording pill. */
+const WAVEFORM_BARS = [
+  10, 16, 8, 20, 12, 22, 14, 9, 18, 12, 21, 10, 15, 23, 11, 17, 9, 19, 13, 21,
+  10, 16, 12, 18, 9, 14,
+];
+
+function Waveform({ active }: { active: boolean }) {
+  return (
+    <div
+      aria-hidden
+      className="flex h-6 min-w-0 flex-1 items-center justify-center gap-[3px] overflow-hidden"
+    >
+      {WAVEFORM_BARS.map((height, index) => (
+        <span
+          key={index}
+          className={cn(
+            'w-[3px] shrink-0 rounded-full bg-foreground/60',
+            active && 'animate-waveform',
+          )}
+          style={{ height: `${height}px`, animationDelay: `${index * 80}ms` }}
+        />
+      ))}
+    </div>
+  );
+}
+
+interface ComposerButtonProps {
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+  className?: string;
+  children: React.ReactNode;
+}
+
+function ComposerIconButton({
+  label,
+  onClick,
+  disabled,
+  className,
+  children,
+}: ComposerButtonProps) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      onClick={onClick}
+      disabled={disabled}
+      className={cn(
+        'flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-40',
+        className,
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
+function SendButton({ label, onClick, disabled }: Omit<ComposerButtonProps, 'className' | 'children'>) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      onClick={onClick}
+      disabled={disabled}
+      className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm transition-opacity hover:opacity-90 disabled:pointer-events-none disabled:opacity-40"
+    >
+      <Send aria-hidden className="size-5" />
+    </button>
   );
 }
 

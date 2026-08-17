@@ -279,17 +279,19 @@ const id = {
     inputPlaceholderWaiting: 'Tunggu panel selesai berbicara…',
     send: 'Kirim',
     sendHint: 'Enter untuk kirim · Shift+Enter untuk baris baru',
-    inputModeText: 'Ketik',
-    inputModeVoice: 'Suara',
     voiceStart: 'Mulai berbicara',
-    voiceStop: 'Berhenti mendengarkan',
+    voicePause: 'Jeda rekaman',
+    voiceResume: 'Lanjutkan rekaman',
+    voiceFinish: 'Selesai berbicara — tinjau transkrip sebelum kirim',
     voiceListening: 'Mendengarkan… silakan bicara.',
-    voiceIdleHint: 'Tekan mikrofon lalu bicara. Setelah berhenti, transkrip bisa diedit sebelum dikirim.',
-    voicePlaceholder: 'Jawaban lisan Anda akan muncul di sini.',
+    voicePaused:
+      'Rekaman dijeda. Lanjutkan berbicara, atau selesaikan untuk meninjau transkrip.',
+    voiceIdleHint:
+      'Ketuk mikrofon untuk menjawab dengan suara, atau ketik jawaban Anda. Enter untuk kirim.',
     voiceTranscriptLabel: 'Transkrip jawaban suara',
     voiceDiscard: 'Hapus transkrip',
     voiceEditableNote:
-      'Jawaban suara ditranskripsikan otomatis. Setelah selesai bicara, periksa dan edit bila perlu sebelum dikirim.',
+      'Periksa dan edit transkrip bila perlu sebelum dikirim.',
     voicePrivacyNote:
       'Transkripsi diproses oleh layanan bawaan browser Anda; hanya teks hasilnya yang dipakai aplikasi ini.',
     voiceDenied:
@@ -917,17 +919,16 @@ const en: Copy = {
     inputPlaceholderWaiting: 'Wait for the panel to finish speaking…',
     send: 'Send',
     sendHint: 'Enter to send · Shift+Enter for a new line',
-    inputModeText: 'Type',
-    inputModeVoice: 'Voice',
     voiceStart: 'Start speaking',
-    voiceStop: 'Stop listening',
+    voicePause: 'Pause recording',
+    voiceResume: 'Resume recording',
+    voiceFinish: 'Done speaking — review the transcript before sending',
     voiceListening: 'Listening… go ahead.',
-    voiceIdleHint: 'Press the microphone and speak. You can edit the transcript after stopping.',
-    voicePlaceholder: 'Your spoken answer will appear here.',
+    voicePaused: 'Recording paused. Resume speaking, or finish to review the transcript.',
+    voiceIdleHint: 'Tap the microphone to answer by voice, or type your answer. Enter to send.',
     voiceTranscriptLabel: 'Voice answer transcript',
     voiceDiscard: 'Discard transcript',
-    voiceEditableNote:
-      'Voice answers are transcribed automatically. Review and edit them after you stop speaking, before sending.',
+    voiceEditableNote: 'Review and edit the transcript if needed before sending.',
     voicePrivacyNote:
       'Transcription is handled by your browser’s built-in service; this app only uses the resulting text.',
     voiceDenied:

@@ -60,9 +60,14 @@ const config: Config = {
           from: { opacity: '0', transform: 'translateY(4px)' },
           to: { opacity: '1', transform: 'translateY(0)' },
         },
+        waveform: {
+          '0%, 100%': { transform: 'scaleY(0.35)' },
+          '50%': { transform: 'scaleY(1)' },
+        },
       },
       animation: {
         'fade-in': 'fade-in 0.2s ease-out',
+        waveform: 'waveform 1.1s ease-in-out infinite',
       },
     },
   },

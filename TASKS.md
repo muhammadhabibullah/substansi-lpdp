@@ -84,6 +84,7 @@ direction (2026-08-17); first task is voice input (P1-1).
 | P1-8 | Strict session order: Akademisi (opening + study plan) → Psikolog (motivation + personality) → Tim LPDP (contribution + closing), each ~20' lead; other roles may still interject one short clarifying follow-up in another session (user feedback #4) | done |
 | P1-9 | Early-exit grading: dimensions the interview never reached are graded from the uploaded documents only — 1 if the documents contain substance, 0 if not — instead of a neutral 2; 0–4 scale (user feedback #5) | done |
 | P1-10 | Strict interjection limit: other roles may interrupt another session block with exactly one question each — enforced deterministically in the moderator engine instead of relying on prompt wording alone | done |
+| P1-11 | WhatsApp-style composer: unified text & voice bar — idle pill input with mic/send swap, recording bar (timer + waveform, pause/resume, no live text), then editable transcript review before sending (user feedback #6) | done |
 
 ## Known follow-ups (small, non-blocking)
 
@@ -101,6 +102,19 @@ direction (2026-08-17); first task is voice input (P1-1).
 ## Progress log
 
 <!-- Newest first. Format: YYYY-MM-DD · TASK-ID · what changed · notes for next session -->
+
+- 2026-08-17 · P1-11 · feat(interview): WhatsApp-style unified composer (user
+  feedback #6). The Ketik/Suara toggle and the live transcript field are gone;
+  one composer now covers both inputs: idle = rounded pill input whose right
+  icon swaps mic → send while typing; recording = trash · red dot + `m:ss`
+  clock + animated waveform · pause/resume · finish, with no live text while
+  the mic is open; finishing opens the editable transcript review so answers
+  can be corrected before sending (P1-6 kept). `useVoiceInput` gained
+  `elapsedMs` (pausable recording clock, resets on clear/finish). i18n copy
+  updated in both locales; unused mode-toggle keys dropped. The previously
+  untracked screen integration test + vitest `.tsx` wiring are committed and
+  updated to the new flow (record → finish → review → edit → send);
+  `pnpm test` 318 pass. Gates: lint, typecheck, test, build.
 
 - 2026-08-17 · ad-hoc · docs: PLAN.md §3 Key modules and AGENTS.md Directory
   layout now list `lib/panel/engine.ts` (session lifecycle & phase

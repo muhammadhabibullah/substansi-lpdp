@@ -42,6 +42,12 @@ export interface UseVoiceInput {
   transcript: string;
   /** Not-yet-final words, shown live and folded in on submit. */
   interim: string;
+  /**
+   * Cumulative listening time for the answer being recorded. Advances only
+   * while the mic is live (pauses with it) and resets when the transcript is
+   * cleared or submitted — drives the WhatsApp-style recording clock.
+   */
+  elapsedMs: number;
   error: VoiceErrorCode | null;
   start: () => void;
   /** Gracefully stop so pending words are finalized. */
@@ -63,6 +69,7 @@ export function useVoiceInput(options: UseVoiceInputOptions): UseVoiceInput {
   const [listening, setListening] = React.useState(false);
   const [transcript, setTranscript] = React.useState('');
   const [interim, setInterim] = React.useState('');
+  const [elapsedMs, setElapsedMs] = React.useState(0);
   const [error, setError] = React.useState<VoiceErrorCode | null>(null);
 
   const recognitionRef = React.useRef<SpeechRecognitionLike | null>(null);
@@ -82,6 +89,29 @@ export function useVoiceInput(options: UseVoiceInputOptions): UseVoiceInput {
   // Latest text for synchronous reads (e.g. `finish` on submit).
   const textRef = React.useRef({ transcript: '', interim: '' });
   textRef.current = { transcript, interim };
+
+  // Recording clock: while listening, an interval re-renders `elapsedMs` from
+  // the current segment start; when listening stops the segment is folded into
+  // `elapsedAccumRef` so pausing freezes the clock and resuming continues it.
+  const elapsedAccumRef = React.useRef(0);
+  React.useEffect(() => {
+    if (!listening) return;
+    const segmentStart = Date.now();
+    const base = elapsedAccumRef.current;
+    const timer = window.setInterval(() => {
+      setElapsedMs(base + Date.now() - segmentStart);
+    }, 250);
+    return () => {
+      window.clearInterval(timer);
+      elapsedAccumRef.current = base + Date.now() - segmentStart;
+      setElapsedMs(elapsedAccumRef.current);
+    };
+  }, [listening]);
+
+  const resetElapsed = React.useCallback(() => {
+    elapsedAccumRef.current = 0;
+    setElapsedMs(0);
+  }, []);
 
   // Feature detection must run client-side only (SSR-safe).
   React.useEffect(() => {
@@ -192,6 +222,7 @@ export function useVoiceInput(options: UseVoiceInputOptions): UseVoiceInput {
   const start = React.useCallback(() => {
     if (activeRef.current) return;
     setError(null);
+    if (textRef.current.transcript.length === 0) resetElapsed();
     lastFinalAtRef.current = 0;
     boundaryPendingRef.current = false;
     const recognition = createRecognition(langRef.current);
@@ -209,7 +240,7 @@ export function useVoiceInput(options: UseVoiceInputOptions): UseVoiceInput {
       setError('other');
       teardown();
     }
-  }, [attach, teardown]);
+  }, [attach, teardown, resetElapsed]);
 
   const stop = React.useCallback(() => {
     activeRef.current = false;
@@ -230,9 +261,10 @@ export function useVoiceInput(options: UseVoiceInputOptions): UseVoiceInput {
     setTranscript('');
     setInterim('');
     setError(null);
+    resetElapsed();
     lastFinalAtRef.current = 0;
     boundaryPendingRef.current = false;
-  }, []);
+  }, [resetElapsed]);
 
   /**
    * Manual edit of the transcript (P1-6). Editing counts as recent activity
@@ -253,10 +285,11 @@ export function useVoiceInput(options: UseVoiceInputOptions): UseVoiceInput {
     );
     setTranscript('');
     setInterim('');
+    resetElapsed();
     lastFinalAtRef.current = 0;
     boundaryPendingRef.current = false;
     return text;
-  }, [stop]);
+  }, [stop, resetElapsed]);
 
   // Never leave the microphone open after unmount.
   React.useEffect(() => teardown, [teardown]);
@@ -267,6 +300,7 @@ export function useVoiceInput(options: UseVoiceInputOptions): UseVoiceInput {
     listening,
     transcript,
     interim,
+    elapsedMs,
     error,
     start,
     stop,
