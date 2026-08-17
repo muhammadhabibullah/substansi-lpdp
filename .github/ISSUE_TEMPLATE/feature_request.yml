@@ -5,8 +5,8 @@ body:
   - type: markdown
     attributes:
       value: |
-        Sebelum mengusulkan, mohon cek [`PLAN.md`](../blob/main/PLAN.md) dan
-        [`TASKS.md`](../blob/main/TASKS.md) — mungkin sudah direncanakan.
+        Sebelum mengusulkan, mohon cek [`PLAN.md`](../blob/master/PLAN.md) dan
+        [`TASKS.md`](../blob/master/TASKS.md) — mungkin sudah direncanakan.
 
   - type: textarea
     id: problem

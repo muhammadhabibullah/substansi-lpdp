@@ -1,11 +1,11 @@
 name: Deploy to GitHub Pages
 
 on:
-  # Deploy only after the CI workflow succeeds on main, so only validated
+  # Deploy only after the CI workflow succeeds on master, so only validated
   # changes reach production.
   workflow_run:
     workflows: ["CI"]
-    branches: [main]
+    branches: [master]
     types: [completed]
   # Allow a manual redeploy from the Actions tab (emergency redeploy,
   # independent of CI).
