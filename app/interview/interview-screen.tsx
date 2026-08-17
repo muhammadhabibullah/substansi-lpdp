@@ -91,14 +91,16 @@ export function InterviewScreen() {
     interview.start();
   };
 
-  // Never keep the microphone open while the panel is speaking/working.
+  // Never keep the microphone open while the panel is speaking/working, or
+  // while the interview is paused (PLAN-V2 §10: mic force-stopped on pause).
   const voiceListening = voice.listening;
   const voiceStop = voice.stop;
+  const paused = session?.status === 'paused';
   React.useEffect(() => {
-    if ((busy || interview.preparingDocs) && voiceListening) {
+    if ((busy || interview.preparingDocs || paused) && voiceListening) {
       voiceStop();
     }
-  }, [busy, interview.preparingDocs, voiceListening, voiceStop]);
+  }, [busy, interview.preparingDocs, paused, voiceListening, voiceStop]);
 
   /* ── Guard: setup incomplete ───────────────────────────────────────────── */
 
@@ -198,7 +200,21 @@ export function InterviewScreen() {
                 {formatClock(interview.remainingMs)}
               </span>
             </div>
-            <Button variant="outline" size="sm" onClick={() => setConfirmEnd(true)}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={interview.pause}
+              disabled={paused}
+            >
+              <Pause aria-hidden />
+              {c.interview.pause}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setConfirmEnd(true)}
+              disabled={paused}
+            >
               <Square aria-hidden />
               {c.interview.endEarly}
             </Button>
@@ -238,93 +254,116 @@ export function InterviewScreen() {
         </Alert>
       ) : null}
 
-      {/* Transcript */}
-      <div
-        ref={scrollRef}
-        className="max-h-[60vh] space-y-4 overflow-y-auto rounded-lg border border-border bg-muted/20 p-4"
-        role="log"
-        aria-live="polite"
-        aria-label={c.interview.transcriptTitle}
-      >
-        {session.turns.length === 0 && !streaming ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">
-            {c.interview.panelPreparing}
-          </p>
-        ) : null}
-
-        {session.turns.map((turn) => (
-          <TurnBubble key={turn.id} turn={turn} />
-        ))}
-
-        {streaming ? (
-          <StreamingBubble panelist={streaming.panelist} text={streaming.text} />
-        ) : null}
-
-        {interview.preparingDocs ? (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 aria-hidden className="size-4 animate-spin" />
-            {c.interview.panelPreparing}
-          </div>
-        ) : null}
-
-        {busy && !streaming && !interview.preparingDocs ? (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Loader2 aria-hidden className="size-4 animate-spin" />
-            {finishing ? c.interview.wrappingUp : c.interview.connecting}
-          </div>
-        ) : null}
-      </div>
-
-      {/* Error recovery (M5-3) */}
-      {errorDescription ? (
-        <Alert variant="destructive" className="mt-4">
-          <AlertTriangle aria-hidden />
-          <AlertTitle>{c.interview.errorTitle}</AlertTitle>
-          <AlertDescription>
-            <p>{errorDescription.summary}</p>
-            {errorDescription.detail ? (
-              <p className="mt-2 max-h-28 overflow-y-auto whitespace-pre-wrap break-words rounded-md border border-border bg-muted/50 px-2 py-1.5 font-mono text-xs">
-                {errorDescription.detail}
+      {paused ? (
+        /* Paused panel (PLAN-V2 §10): timer frozen, transcript not rendered. */
+        <Card className="mt-4">
+          <CardHeader>
+            <CardTitle>{c.interview.pausedTitle}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-muted-foreground">{c.interview.pausedBody}</p>
+            <p className="text-sm text-muted-foreground">
+              {f(c.interview.pausedTimerNote, {
+                time: formatClock(interview.remainingMs),
+              })}
+            </p>
+            <Button onClick={interview.resume}>
+              <Play aria-hidden />
+              {c.interview.resume}
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          {/* Transcript */}
+          <div
+            ref={scrollRef}
+            className="max-h-[60vh] space-y-4 overflow-y-auto rounded-lg border border-border bg-muted/20 p-4"
+            role="log"
+            aria-live="polite"
+            aria-label={c.interview.transcriptTitle}
+          >
+            {session.turns.length === 0 && !streaming ? (
+              <p className="py-8 text-center text-sm text-muted-foreground">
+                {c.interview.panelPreparing}
               </p>
             ) : null}
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Button size="sm" variant="secondary" onClick={interview.retry}>
-                <RotateCcw aria-hidden />
-                {c.interview.errorRetry}
-              </Button>
-              <Button size="sm" variant="outline" onClick={interview.skipTurn}>
-                <SkipForward aria-hidden />
-                {c.interview.errorSkipTurn}
-              </Button>
-              <Button size="sm" variant="outline" onClick={interview.endEarly}>
-                <Square aria-hidden />
-                {c.interview.errorEndSession}
-              </Button>
-            </div>
-          </AlertDescription>
-        </Alert>
-      ) : null}
 
-      {/* Answer composer — WhatsApp-style unified text & voice input (P1-11) */}
-      <div className="mt-4">
-        <AnswerComposer
-          voice={voice}
-          disabled={composerBusy}
-          draft={draft}
-          setDraft={setDraft}
-          onSubmitText={(text) => {
-            setDraft('');
-            interview.submitAnswer(text);
-          }}
-          onSubmitVoice={() => {
-            const text = voice.finish();
-            if (text) interview.submitAnswer(text);
-          }}
-          metaText={f(c.interview.answersCount, {
-            count: session.turns.filter((turn) => turn.speaker === 'user').length,
-          })}
-        />
-      </div>
+            {session.turns.map((turn) => (
+              <TurnBubble key={turn.id} turn={turn} />
+            ))}
+
+            {streaming ? (
+              <StreamingBubble panelist={streaming.panelist} text={streaming.text} />
+            ) : null}
+
+            {interview.preparingDocs ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 aria-hidden className="size-4 animate-spin" />
+                {c.interview.panelPreparing}
+              </div>
+            ) : null}
+
+            {busy && !streaming && !interview.preparingDocs ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 aria-hidden className="size-4 animate-spin" />
+                {finishing ? c.interview.wrappingUp : c.interview.connecting}
+              </div>
+            ) : null}
+          </div>
+
+          {/* Error recovery (M5-3) */}
+          {errorDescription ? (
+            <Alert variant="destructive" className="mt-4">
+              <AlertTriangle aria-hidden />
+              <AlertTitle>{c.interview.errorTitle}</AlertTitle>
+              <AlertDescription>
+                <p>{errorDescription.summary}</p>
+                {errorDescription.detail ? (
+                  <p className="mt-2 max-h-28 overflow-y-auto whitespace-pre-wrap break-words rounded-md border border-border bg-muted/50 px-2 py-1.5 font-mono text-xs">
+                    {errorDescription.detail}
+                  </p>
+                ) : null}
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button size="sm" variant="secondary" onClick={interview.retry}>
+                    <RotateCcw aria-hidden />
+                    {c.interview.errorRetry}
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={interview.skipTurn}>
+                    <SkipForward aria-hidden />
+                    {c.interview.errorSkipTurn}
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={interview.endEarly}>
+                    <Square aria-hidden />
+                    {c.interview.errorEndSession}
+                  </Button>
+                </div>
+              </AlertDescription>
+            </Alert>
+          ) : null}
+
+          {/* Answer composer — WhatsApp-style unified text & voice input (P1-11) */}
+          <div className="mt-4">
+            <AnswerComposer
+              voice={voice}
+              disabled={composerBusy}
+              draft={draft}
+              setDraft={setDraft}
+              onSubmitText={(text) => {
+                setDraft('');
+                interview.submitAnswer(text);
+              }}
+              onSubmitVoice={() => {
+                const text = voice.finish();
+                if (text) interview.submitAnswer(text);
+              }}
+              metaText={f(c.interview.answersCount, {
+                count: session.turns.filter((turn) => turn.speaker === 'user').length,
+              })}
+            />
+          </div>
+        </>
+      )}
 
       {/* End-early confirmation */}
       {confirmEnd ? (
