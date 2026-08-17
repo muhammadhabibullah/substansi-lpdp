@@ -52,6 +52,20 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Run the same validation as CI so a manual workflow_dispatch deploy is
+      # never shipped without lint/typecheck/test passing. A failure here
+      # stops the deploy before the Pages artifact is uploaded.
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      # No live API key is ever required: tests cover pure logic and prompt
+      # construction only (AGENTS.md testing guidance).
+      - name: Unit tests
+        run: pnpm test
+
       - name: Build
         env:
           # A project Pages site is served from /<repo>, so the export needs a
