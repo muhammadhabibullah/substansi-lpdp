@@ -83,6 +83,7 @@ direction (2026-08-17); first task is voice input (P1-1).
 | P1-7 | Per-role time model: each role leads 15–20 min (Akademisi 15', Psikolog 20', Tim LPDP 15' + opening/closing) within the 60' total, follow-up interjections allowed in any phase, and "Unsur LPDP" renamed to "Tim LPDP" (user feedback #3) | done |
 | P1-8 | Strict session order: Akademisi (opening + study plan) → Psikolog (motivation + personality) → Tim LPDP (contribution + closing), each ~20' lead; other roles may still interject one short clarifying follow-up in another session (user feedback #4) | done |
 | P1-9 | Early-exit grading: dimensions the interview never reached are graded from the uploaded documents only — 1 if the documents contain substance, 0 if not — instead of a neutral 2; 0–4 scale (user feedback #5) | done |
+| P1-10 | Strict interjection limit: other roles may interrupt another session block with exactly one question each — enforced deterministically in the moderator engine instead of relying on prompt wording alone | done |
 
 ## Known follow-ups (small, non-blocking)
 
@@ -100,6 +101,19 @@ direction (2026-08-17); first task is voice input (P1-1).
 ## Progress log
 
 <!-- Newest first. Format: YYYY-MM-DD · TASK-ID · what changed · notes for next session -->
+
+- 2026-08-17 · P1-10 · feat(panel): strict one-interjection-per-block cap.
+  P1-8 limited off-block interjections to one short follow-up via prompt
+  wording only; now the cap is enforced deterministically in
+  `lib/panel/moderator.ts`: `interjectionsInBlock` counts a panelist's
+  questions across every phase of the current lead's block (opening+studyPlan
+  / motivation+personality / contribution+closing), `applyInterjectionCap`
+  redirects an exhausted interjector back to the block lead inside
+  `parseDecision` (LLM path), and `fallbackDecision` only rotates to
+  participants with budget left. The moderator prompt now states the limit is
+  absolute and shows per-panelist block interjection counts. New tests in
+  `moderator.test.ts` (10; `pnpm test` 304 pass). Gates: lint, typecheck,
+  test, build.
 
 - 2026-08-17 · P1-9 · fix(grading): early-exit grading (user feedback #5).
   `Score` is 0–4; untested dimensions (session ended early) are graded from

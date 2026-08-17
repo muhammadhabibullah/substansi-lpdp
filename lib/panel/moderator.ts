@@ -46,11 +46,62 @@ export interface ModeratorContext {
 /** How many recent turns the moderator sees. Small on purpose — it is cheap. */
 const MODERATOR_HISTORY_WINDOW = 6;
 
+/**
+ * Strict interjection cap (user feedback #4): a panelist who does not lead the
+ * current block may ask at most this many questions in it. Enforced
+ * deterministically on every decision path — the model cannot override it.
+ */
+export const MAX_INTERJECTIONS_PER_BLOCK = 1;
+
+/* ── Interjection budget ─────────────────────────────────────────────────── */
+
+/**
+ * How many questions `panelist` has already asked inside the current lead's
+ * block. A "block" is the run of phases led by the same panelist (Akademisi:
+ * opening + studyPlan; Psikolog: motivation + personality; Tim LPDP:
+ * contribution + closing). The lead's own questions never count — they are
+ * hosting their session, not interjecting in it.
+ */
+export function interjectionsInBlock(
+  context: Pick<ModeratorContext, 'phase' | 'history'>,
+  panelist: PanelistId,
+): number {
+  const lead = getPhase(context.phase).lead;
+  if (panelist === lead) return 0;
+  return context.history.filter(
+    (turn) => turn.speaker === panelist && getPhase(turn.phase).lead === lead,
+  ).length;
+}
+
+/** Whether `panelist` may still be given the floor in the current phase. */
+export function mayInterject(
+  context: Pick<ModeratorContext, 'phase' | 'history'>,
+  panelist: PanelistId,
+): boolean {
+  return (
+    getPhase(context.phase).lead === panelist ||
+    interjectionsInBlock(context, panelist) < MAX_INTERJECTIONS_PER_BLOCK
+  );
+}
+
+/**
+ * Redirect an exhausted interjector back to the block lead, keeping the
+ * directive. Applied to every moderator decision, model-based or fallback.
+ */
+export function applyInterjectionCap(
+  context: Pick<ModeratorContext, 'phase' | 'history'>,
+  decision: ModeratorDecision,
+): ModeratorDecision {
+  if (mayInterject(context, decision.panelist)) return decision;
+  return { ...decision, panelist: getPhase(context.phase).lead };
+}
+
 /* ── Deterministic fallback ──────────────────────────────────────────────── */
 
 /**
  * Pick a speaker without an LLM: prefer the phase lead, but avoid the panelist
- * who just spoke so the panel does not monologue.
+ * who just spoke so the panel does not monologue. Panelists who already used
+ * their single interjection in this block are never picked again.
  */
 export function fallbackDecision(context: ModeratorContext): ModeratorDecision {
   const phase = getPhase(context.phase);
@@ -58,10 +109,15 @@ export function fallbackDecision(context: ModeratorContext): ModeratorDecision {
 
   let panelist: PanelistId = phase.lead;
   if (context.lastSpeaker === phase.lead && participants.length > 1) {
-    // Rotate to the next participant after the lead.
-    const others = participants.filter((id) => id !== context.lastSpeaker);
-    // Alternate deterministically using the question count.
-    panelist = others[context.questionsInPhase % others.length] ?? phase.lead;
+    // Rotate to the next participant after the lead — but only among those
+    // who still have interjection budget left in this block.
+    const others = participants.filter(
+      (id) => id !== context.lastSpeaker && mayInterject(context, id),
+    );
+    if (others.length > 0) {
+      // Alternate deterministically using the question count.
+      panelist = others[context.questionsInPhase % others.length] ?? phase.lead;
+    }
   }
 
   return {
@@ -155,7 +211,7 @@ function buildModeratorMessages(context: ModeratorContext): CoreMessage[] {
     'PRINSIP MEMILIH:',
     `1. Urutan sesi tetap dan ketat: blok Akademisi (pembukaan + rencana studi) → blok Psikolog (motivasi + kepribadian) → blok Tim LPDP (kontribusi + penutup). Pemimpin tahap ini adalah "${phase.lead}" — beri dia sebagian besar giliran pada tahap ini.`,
     `2. Pewawancara yang boleh bicara pada tahap ini: ${phase.participants.join(', ')}.`,
-    '3. Pewawancara di luar pemimpin tahap hanya boleh menyela dengan SATU pertanyaan lanjutan singkat untuk mengklarifikasi poin dari jawaban terakhir yang menarik bagi mereka — setelah itu kembalikan giliran ke pemimpin tahap.',
+    '3. Pewawancara di luar pemimpin tahap hanya boleh menyela dengan SATU pertanyaan lanjutan singkat per blok sesi untuk mengklarifikasi poin dari jawaban terakhir yang menarik bagi mereka — setelah itu kembalikan giliran ke pemimpin tahap. Batas ini MUTLAK dan dipaksakan sistem: pewawancara yang jatah selanya sudah habis tidak akan mendapat giliran lagi di blok ini, jadi jangan pilih mereka.',
     '4. Jatah waktu bertanya tiap pewawancara sekitar 20 menit selama seluruh sesi. Seimbangkan giliran memakai jumlah pertanyaan tiap pewawancara di bawah — jangan beri giliran baru ke pewawancara yang sudah jauh lebih banyak bicara, kecuali ada alasan mendesak.',
     '5. Jika jawaban terakhir kandidat mengandung klaim tanpa bukti, kontradiksi dengan dokumen, atau jawaban normatif — perintahkan menggali itu.',
     '6. Jika kandidat sudah menjawab tuntas, pindah ke aspek lain yang belum diuji pada tahap ini.',
@@ -170,10 +226,18 @@ function buildModeratorMessages(context: ModeratorContext): CoreMessage[] {
     return `${panelistLabel(id)} ${asked}`;
   }).join(', ');
 
+  const interjectionBudget = PANELIST_IDS.filter((id) => id !== phase.lead)
+    .map(
+      (id) =>
+        `${panelistLabel(id)} ${interjectionsInBlock(context, id)}/${MAX_INTERJECTIONS_PER_BLOCK}`,
+    )
+    .join(', ');
+
   const user = [
     `TAHAP: ${context.phase} (${phase.minutes} menit dijatah)`,
     `PERTANYAAN PADA TAHAP INI: ${context.questionsInPhase}`,
     `JUMLAH PERTANYAAN SEJAUH INI: ${questionCounts}`,
+    `JATAH SELA DI BLOK INI (maks ${MAX_INTERJECTIONS_PER_BLOCK} tiap pewawancara): ${interjectionBudget}`,
     `SISA WAKTU WAWANCARA: ${Math.round(context.remainingMs / 60_000)} menit`,
     `PEWAWANCARA TERAKHIR: ${context.lastSpeaker ?? '(belum ada)'}`,
     shouldWrapUp(context.elapsedMs)
@@ -209,7 +273,10 @@ function parseDecision(value: unknown, context: ModeratorContext): ModeratorDeci
   }
 
   const allowed = getPhase(context.phase).participants;
-  const safePanelist = allowed.includes(panelist) ? panelist : getPhase(context.phase).lead;
+  let safePanelist = allowed.includes(panelist) ? panelist : getPhase(context.phase).lead;
+  // Strict cap: a panelist who already interjected once in this block is
+  // redirected to the block lead, whatever the model decided.
+  safePanelist = applyInterjectionCap(context, { panelist: safePanelist, directive }).panelist;
 
   return { panelist: safePanelist, directive: directive.trim() };
 }

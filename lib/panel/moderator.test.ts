@@ -1,8 +1,20 @@
 import { describe, expect, it } from 'vitest';
 
-import { fallbackDecision, type ModeratorContext } from './moderator';
+import {
+  applyInterjectionCap,
+  fallbackDecision,
+  interjectionsInBlock,
+  MAX_INTERJECTIONS_PER_BLOCK,
+  type ModeratorContext,
+} from './moderator';
 import { getPhase, PHASES } from './phases';
-import { EMPTY_PROFILE, type PhaseId, type Profile } from '../types';
+import {
+  EMPTY_PROFILE,
+  type PanelistId,
+  type PhaseId,
+  type Profile,
+  type TranscriptTurn,
+} from '../types';
 
 const profile: Profile = { ...EMPTY_PROFILE, name: 'Budi', jenjang: 'magister' };
 
@@ -119,5 +131,123 @@ describe('fallbackDecision (deterministic speaker rotation)', () => {
       context({ phase: 'opening' as PhaseId, questionsInPhase: 99 }),
     );
     expect(decision.directive.trim().length).toBeGreaterThan(0);
+  });
+
+  it('keeps the floor with the lead once every interjection is used', () => {
+    const phase = getPhase('studyPlan');
+    const decision = fallbackDecision(
+      context({
+        phase: 'studyPlan',
+        lastSpeaker: phase.lead,
+        questionsInPhase: 4,
+        history: [
+          question('psikolog', 'opening'),
+          question('lpdp', 'studyPlan'),
+        ],
+      }),
+    );
+    expect(decision.panelist).toBe(phase.lead);
+  });
+
+  it('only rotates to participants with interjection budget left', () => {
+    const phase = getPhase('studyPlan');
+    for (let asked = 0; asked < 6; asked += 1) {
+      const decision = fallbackDecision(
+        context({
+          phase: 'studyPlan',
+          lastSpeaker: phase.lead,
+          questionsInPhase: asked,
+          history: [question('psikolog', 'opening')],
+        }),
+      );
+      expect(decision.panelist).toBe('lpdp');
+    }
+  });
+});
+
+/* ── Strict one-interjection-per-block cap ─────────────────────────────── */
+
+function question(speaker: PanelistId, phase: PhaseId): TranscriptTurn {
+  return {
+    id: `${speaker}-${phase}`,
+    atMs: 0,
+    speaker,
+    text: 'Pertanyaan.',
+    phase,
+    lang: 'id',
+  };
+}
+
+describe('interjectionsInBlock', () => {
+  it('counts a panelist question in every phase of the current lead block', () => {
+    // opening and studyPlan are both led by the Akademisi, so one question
+    // in each still counts as two interjections in the same block.
+    const ctx = context({
+      phase: 'studyPlan',
+      history: [question('psikolog', 'opening'), question('psikolog', 'studyPlan')],
+    });
+    expect(interjectionsInBlock(ctx, 'psikolog')).toBe(2);
+  });
+
+  it('does not count questions from other blocks', () => {
+    const ctx = context({
+      phase: 'studyPlan',
+      history: [question('psikolog', 'motivation')],
+    });
+    expect(interjectionsInBlock(ctx, 'psikolog')).toBe(0);
+  });
+
+  it('never counts the block lead as an interjector', () => {
+    const ctx = context({
+      phase: 'studyPlan',
+      history: [question('akademisi', 'opening'), question('akademisi', 'studyPlan')],
+    });
+    expect(interjectionsInBlock(ctx, 'akademisi')).toBe(0);
+  });
+});
+
+describe('applyInterjectionCap', () => {
+  const directive = 'Gali metodologi.';
+
+  it('lets the block lead speak without limit', () => {
+    const ctx = context({
+      phase: 'studyPlan',
+      history: [
+        question('akademisi', 'opening'),
+        question('akademisi', 'studyPlan'),
+        question('akademisi', 'studyPlan'),
+      ],
+    });
+    const decision = applyInterjectionCap(ctx, { panelist: 'akademisi', directive });
+    expect(decision.panelist).toBe('akademisi');
+  });
+
+  it('lets a panelist with no interjection yet speak', () => {
+    const ctx = context({ phase: 'motivation', history: [] });
+    const decision = applyInterjectionCap(ctx, { panelist: 'akademisi', directive });
+    expect(decision.panelist).toBe('akademisi');
+  });
+
+  it('redirects an exhausted interjector to the block lead, keeping the directive', () => {
+    const ctx = context({
+      phase: 'personality',
+      history: [question('akademisi', 'motivation')],
+    });
+    const decision = applyInterjectionCap(ctx, { panelist: 'akademisi', directive });
+    expect(decision.panelist).toBe('psikolog');
+    expect(decision.directive).toBe(directive);
+  });
+
+  it('treats one question in an earlier phase of the same block as used up', () => {
+    const ctx = context({
+      phase: 'closing',
+      history: [question('psikolog', 'contribution')],
+    });
+    const decision = applyInterjectionCap(ctx, { panelist: 'psikolog', directive });
+    expect(decision.panelist).toBe('lpdp');
+  });
+
+  it('caps at exactly MAX_INTERJECTIONS_PER_BLOCK', () => {
+    expect(MAX_INTERJECTIONS_PER_BLOCK).toBe(1);
   });
 });

@@ -112,9 +112,11 @@ lib/
   Each role leads about 20 minutes of questioning: Akademisi 20' (opening +
   study plan), Psikolog 20' (motivation + personality), Tim LPDP 20'
   (contribution + closing). Every panelist participates in every phase, but
-  panelists other than the phase lead may only interject with a short
-  clarifying follow-up on a point that interests them, then the floor returns
-  to the lead.
+  panelists other than the phase lead may interject with at most ONE short
+  clarifying follow-up per lead block on a point that interests them, then
+  the floor returns to the lead. The one-interjection cap is enforced
+  deterministically in the moderator engine (both the LLM decision and its
+  fallback), not only by prompt wording.
 - **Moderator step** (cheap, small prompt): given phase, elapsed time, and last exchange → picks next panelist + a directive ("probe the inconsistency between his CV gap year and his claimed leadership").
 - **Panelist step**: full persona prompt + relevant document excerpts + conversation window → streamed question/response in character.
 - Documents are chunked at setup; each panelist gets the excerpts relevant to its focus (study plan → Akademisi; essay kontribusi → LPDP; CV → all).
