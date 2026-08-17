@@ -1,0 +1,346 @@
+{
+  "status": "available",
+  "data": {
+    "kind": "agent-asset-baseline",
+    "schemaVersion": 1,
+    "status": "complete",
+    "scope": {
+      "provider": "qoder",
+      "workspace": "/Users/mac/github.com/muhammadhabibullah/substansi-lpdp",
+      "includeUserHome": true,
+      "includeMemories": true
+    },
+    "envelopes": {
+      "lint": {
+        "status": "available",
+        "data": {
+          "kind": "agent-lint",
+          "profile": "agent-assets-review",
+          "summary": {
+            "entrypoints": 1,
+            "documents": 1,
+            "links": 0,
+            "references": 0,
+            "missingReferences": 0,
+            "findings": 1,
+            "errors": 0,
+            "warnings": 0,
+            "advisories": 1
+          },
+          "assetInventory": {
+            "provider": "qoder",
+            "summary": {
+              "skills": 1,
+              "mcps": 0,
+              "commands": 0,
+              "hooks": 0,
+              "rules": 1,
+              "agents": 0,
+              "customAgents": 0,
+              "builtinAgentOverrides": 0,
+              "plugins": 0
+            }
+          },
+          "findings": {
+            "items": [
+              {
+                "id": "skill-long-without-progressive-references",
+                "severity": "advisory",
+                "assetKind": "skill",
+                "assetName": "find-skills",
+                "scope": "user",
+                "file": "/Users/mac/.agents/skills/find-skills/SKILL.md",
+                "line": 1,
+                "evidence": "/Users/mac/.agents/skills/find-skills/SKILL.md is 142 lines and has no existing local Markdown references.",
+                "sourceLabel": "User",
+                "rubricRef": "Progressive Disclosure"
+              }
+            ],
+            "total": 1,
+            "omitted": 0
+          }
+        }
+      },
+      "inventory": {
+        "status": "available",
+        "data": {
+          "scope": {
+            "platform": "qoder",
+            "includeUserHome": true,
+            "includeMemories": true
+          },
+          "summary": {
+            "projectAssets": 2,
+            "userAssets": 1,
+            "pluginAssets": 3,
+            "sessionSourceHints": 1,
+            "memories": 2,
+            "builtinAgentOverrides": 0
+          },
+          "coverageRows": [
+            {
+              "surface": "Rules",
+              "scopes": [
+                "Project"
+              ],
+              "count": 1,
+              "paths": [
+                "AGENTS.md"
+              ]
+            },
+            {
+              "surface": "Skills",
+              "scopes": [
+                "Global",
+                "Plugin"
+              ],
+              "count": 4,
+              "paths": [
+                "~/.agents/skills/find-skills/SKILL.md",
+                "~/.qoder/plugins/cache/qoder-bundler/better-harness/skills/better-harness/SKILL.md",
+                "~/.qoder/plugins/cache/qoder-bundler/qoder-create-plugin/skills/create-plugin/SKILL.md",
+                "~/.qoder/plugins/cache/qoder-marketplace/qmind/0.1.0/skills/qmind-knowledge/SKILL.md"
+              ]
+            },
+            {
+              "surface": "MCP",
+              "scopes": [
+                "Plugin"
+              ],
+              "count": 1,
+              "paths": [
+                "~/.qoder/plugins/cache/qoder-bundler/qoder-computer-use/mcp.json"
+              ]
+            },
+            {
+              "surface": "Workflows",
+              "scopes": [
+                "Project"
+              ],
+              "count": 2,
+              "paths": [
+                ".github/workflows/ci.yml",
+                ".github/workflows/deploy.yml"
+              ]
+            },
+            {
+              "surface": "Plugins",
+              "scopes": [
+                "Plugin"
+              ],
+              "count": 4,
+              "paths": [
+                "~/.qoder/plugins/cache/qoder-bundler/better-harness/.qoder-plugin/plugin.json",
+                "~/.qoder/plugins/cache/qoder-marketplace/qmind/0.1.0/.qoder-plugin/plugin.json",
+                "~/.qoder/plugins/cache/qoder-bundler/qoder-computer-use/.qoder-plugin/plugin.json",
+                "~/.qoder/plugins/cache/qoder-bundler/qoder-create-plugin"
+              ]
+            },
+            {
+              "surface": "Memories",
+              "scopes": [
+                "Project"
+              ],
+              "count": 36
+            }
+          ],
+          "ownerRoutes": {
+            "items": [
+              {
+                "kind": "rules",
+                "scope": "project",
+                "name": "AGENTS.md",
+                "owner": "muhammadhabibullah/substansi-lpdp",
+                "route": "AGENTS.md"
+              },
+              {
+                "kind": "skills",
+                "scope": "user",
+                "name": "find-skills",
+                "owner": "User"
+              },
+              {
+                "kind": "plugins",
+                "scope": "plugin",
+                "name": "Better Harness",
+                "version": "0.2.9",
+                "owner": "Better Harness"
+              },
+              {
+                "kind": "mcps",
+                "scope": "plugin",
+                "name": "computer-use",
+                "owner": "computer-use"
+              },
+              {
+                "kind": "workflows",
+                "scope": "project",
+                "name": "ci.yml",
+                "route": ".github/workflows/ci.yml"
+              },
+              {
+                "kind": "skills",
+                "scope": "plugin",
+                "name": "better-harness",
+                "owner": "better-harness"
+              },
+              {
+                "kind": "plugins",
+                "scope": "plugin",
+                "name": "QMind Knowledge",
+                "version": "0.1.0",
+                "owner": "QMind Knowledge"
+              },
+              {
+                "kind": "workflows",
+                "scope": "project",
+                "name": "deploy.yml",
+                "route": ".github/workflows/deploy.yml"
+              },
+              {
+                "kind": "skills",
+                "scope": "plugin",
+                "name": "create-plugin",
+                "owner": "qoder-create-plugin"
+              },
+              {
+                "kind": "plugins",
+                "scope": "plugin",
+                "name": "Qoder Computer Use",
+                "version": "0.1.28",
+                "owner": "Qoder Computer Use"
+              },
+              {
+                "kind": "skills",
+                "scope": "plugin",
+                "name": "qmind-knowledge",
+                "owner": "qmind-knowledge"
+              },
+              {
+                "kind": "plugins",
+                "scope": "plugin",
+                "name": "Qoder Create Plugin",
+                "version": "0.1.0",
+                "owner": "Qoder Create Plugin"
+              }
+            ],
+            "total": 12,
+            "omitted": 0
+          },
+          "memories": {
+            "included": true,
+            "contentPolicy": "raw-memory-content-not-read",
+            "categories": [
+              {
+                "category": "common_pitfalls_experience",
+                "count": 11
+              },
+              {
+                "category": "development_code_specification",
+                "count": 1
+              },
+              {
+                "category": "important_decision_experience",
+                "count": 1
+              },
+              {
+                "category": "project_architecture",
+                "count": 2
+              },
+              {
+                "category": "project_build_configuration",
+                "count": 1
+              },
+              {
+                "category": "project_dependency_configuration",
+                "count": 1
+              },
+              {
+                "category": "project_environment_configuration",
+                "count": 1
+              },
+              {
+                "category": "project_introduction",
+                "count": 1
+              },
+              {
+                "category": "project_scm_configuration",
+                "count": 1
+              },
+              {
+                "category": "project_tech_stack",
+                "count": 1
+              },
+              {
+                "category": "task_summary_experience",
+                "count": 15
+              }
+            ],
+            "titleCount": 36,
+            "details": {
+              "contentPolicy": "metadata-only",
+              "scanState": "scanned-present",
+              "scopeCounts": [
+                {
+                  "scope": "Project",
+                  "count": 36
+                }
+              ],
+              "integrity": {
+                "status": "reviewed",
+                "titleCount": 36,
+                "reviewedTitleCount": 36,
+                "truncated": false,
+                "exactCollisionGroups": 0,
+                "similarityCandidates": 0
+              }
+            }
+          },
+          "warnings": []
+        }
+      },
+      "integrity": {
+        "status": "available",
+        "data": {
+          "kind": "asset-integrity-review",
+          "profile": "asset-integrity-review",
+          "status": "reviewed",
+          "contentPolicy": "memory-title-and-path-metadata-only",
+          "summary": {
+            "findingCount": 0,
+            "memories": {
+              "titleCount": 36,
+              "reviewedTitleCount": 36,
+              "truncated": false,
+              "exactCollisionGroups": 0,
+              "similarityCandidates": 0
+            },
+            "plugins": {
+              "enabledPluginCount": 4,
+              "nameCollisionGroups": 0,
+              "capabilityOverlapGroups": 0,
+              "familyCandidates": 0
+            },
+            "hooks": {
+              "enabledHookCount": 0,
+              "overRecommendedLimit": false,
+              "exactDuplicateGroups": 0,
+              "fanoutCandidates": 0
+            }
+          },
+          "findings": {
+            "items": [],
+            "total": 0,
+            "omitted": 0
+          }
+        }
+      }
+    },
+    "diagnostics": {
+      "sharedInventorySnapshot": true,
+      "compact": true,
+      "findingLimitPerEnvelope": 16,
+      "ownerRouteLimit": 16
+    }
+  }
+}
