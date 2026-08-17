@@ -1,0 +1,174 @@
+{
+  "summary": {
+    "projectName": "substansi-lpdp",
+    "locale": "en",
+    "modelId": "agent-work-loop-v4",
+    "reportContractVersion": 26,
+    "overview": "The project has a disciplined agentic workflow (AGENTS.md/PLAN.md/TASKS.md), strong key-safety by construction, and a well-tested LLM gateway, but several mechanisms are not fully wired into ordinary work: the Definition of Done omits the test gate, the architecture module map is stale, the orchestration seam lacks mechanical verification, and the deploy workflow can bypass CI. Session evidence is too thin to judge repeated work or whether captured learning helped.",
+    "dimensions": [
+      {
+        "id": "task-understanding",
+        "label": "Task Understanding",
+        "score": 68,
+        "summary": "AGENTS.md routes decisions to PLAN.md and TASKS.md with a per-task Definition of Done and six hard constraints, but the module map omits two active modules (engine.ts, notetaker.ts) and the DoD omits the test gate despite an existing 12-file suite."
+      },
+      {
+        "id": "controlled-execution",
+        "label": "Controlled Execution",
+        "score": 80,
+        "summary": "Reproducible startup with pinned pnpm 9.12.3/Node 22, frozen lockfile, and prepare:assets; permission boundary enforced by guardedFetch (cross-origin header strip, redirect:error) and a multi-pattern CI key-leak scan. No doctor/health-check command; host-side deployment boundary unobserved."
+      },
+      {
+        "id": "change-validation",
+        "label": "Change Validation",
+        "score": 70,
+        "summary": "Pure-logic and prompt-construction tests are well-covered with negative and recovery cases (truncation retry, cross-origin key strip, storage quota); the screen↔hooks↔llm orchestration seam has only 3 jsdom lifecycle tests and was otherwise manually verified."
+      },
+      {
+        "id": "reliable-delivery",
+        "label": "Reliable Delivery",
+        "score": 65,
+        "summary": "CI gates on lint+type+test+build+key-scan+static-export assertions and deploy chains behind CI success, but workflow_dispatch bypasses CI and the deploy job re-runs only build; no CODEOWNERS or required-status-check is repo-owned."
+      },
+      {
+        "id": "learning-capture",
+        "label": "Learning Capture",
+        "score": 42,
+        "summary": "Bounded review completed; one exact Memory title collision blocks routing (pending Asset Health). Session evidence is too thin (1 session, 5.1 min, 2 unconfirmed-independent episodes) to distinguish repeated work or record a clean window, so lifecycle detection stays Unobserved in the evidence boundary. No comparable outcome window exists."
+      }
+    ],
+    "aiAgentPractice": {
+      "inspectedSurfaces": ["Rules", "Skills", "MCP", "Workflows", "Plugins", "Memories"],
+      "coverageRows": [
+        {
+          "surface": "Rules",
+          "scopes": ["Project"],
+          "count": 1,
+          "paths": ["AGENTS.md"]
+        },
+        {
+          "surface": "Skills",
+          "scopes": ["Global", "Plugin"],
+          "count": 4,
+          "paths": [
+            "~/.agents/skills/find-skills/SKILL.md",
+            "~/.qoder/plugins/cache/qoder-bundler/better-harness/skills/better-harness/SKILL.md",
+            "~/.qoder/plugins/cache/qoder-bundler/qoder-create-plugin/skills/create-plugin/SKILL.md",
+            "~/.qoder/plugins/cache/qoder-marketplace/qmind/0.1.0/skills/qmind-knowledge/SKILL.md"
+          ]
+        },
+        {
+          "surface": "MCP",
+          "scopes": ["Plugin"],
+          "count": 1,
+          "paths": ["~/.qoder/plugins/cache/qoder-bundler/qoder-computer-use/mcp.json"]
+        },
+        {
+          "surface": "Workflows",
+          "scopes": ["Project"],
+          "count": 2,
+          "paths": [".github/workflows/ci.yml", ".github/workflows/deploy.yml"]
+        },
+        {
+          "surface": "Plugins",
+          "scopes": ["Plugin"],
+          "count": 4,
+          "paths": [
+            "~/.qoder/plugins/cache/qoder-bundler/better-harness/.qoder-plugin/plugin.json",
+            "~/.qoder/plugins/cache/qoder-marketplace/qmind/0.1.0/.qoder-plugin/plugin.json",
+            "~/.qoder/plugins/cache/qoder-bundler/qoder-computer-use/.qoder-plugin/plugin.json",
+            "~/.qoder/plugins/cache/qoder-bundler/qoder-create-plugin"
+          ]
+        },
+        {
+          "surface": "Memories",
+          "scopes": ["Project"],
+          "count": 32
+        },
+        {
+          "surface": "Hooks",
+          "scopes": ["Project"],
+          "count": 0
+        },
+        {
+          "surface": "Commands",
+          "scopes": ["Project"],
+          "count": 0
+        },
+        {
+          "surface": "Custom Agents",
+          "scopes": ["Project"],
+          "count": 0
+        }
+      ]
+    }
+  },
+  "findings": [
+    {
+      "id": "stale-module-map",
+      "title": "Agents cannot reach active session engine and note-taker modules from the architecture map",
+      "severity": "Medium",
+      "reason": "Fact: PLAN.md §3 Key modules and AGENTS.md Directory layout list lib/panel/{moderator,personas,phases} but omit lib/panel/engine.ts (287 lines, session lifecycle and phase bookkeeping) and lib/panel/notetaker.ts (197 lines, per-answer annotation feeding the report). Both are active and imported by hooks/use-interview.ts. Inference: an agent routing from the architecture source-of-truth to where the session clock or per-answer annotation lives must fall back to reading code or the TASKS progress log, increasing the risk of editing the wrong owner or missing a boundary. Owner: PLAN.md §3 and AGENTS.md Directory layout. Uncertainty: the files are well-structured and import-discoverable, so a careful agent can still find them; the gap is in authoritative routing, not in the code itself.",
+      "dimensionRefs": ["task-understanding"],
+      "subdimensionRefs": ["relevant-context"],
+      "aiFixPrompt": "/better-harness fix this issue\n\nUpdate PLAN.md §3 Key modules and AGENTS.md Directory layout to include lib/panel/engine.ts and lib/panel/notetaker.ts with one-line descriptions of their responsibilities (session lifecycle/phase bookkeeping and per-answer annotation). Keep the existing entries for moderator, personas, and phases unchanged.\n\n## Validation\n\n- Confirm the module map in PLAN.md §3 and AGENTS.md lists all files in lib/panel/\n- Run `pnpm typecheck` to confirm no breakage from doc changes",
+      "expectedArtifact": "Document",
+      "expectedOutput": [
+        "An agent routing from PLAN.md or AGENTS.md can reach engine.ts and notetaker.ts without falling back to reading code."
+      ]
+    },
+    {
+      "id": "dod-omits-test-gate",
+      "title": "Agents can satisfy Definition of Done without running the existing test suite",
+      "severity": "Low",
+      "reason": "Fact: AGENTS.md Definition of Done lists typecheck, build, and lint as required gates but omits `pnpm test`. The Commands section annotates `pnpm test` as 'unit tests (when added)'. Yet 12 test files exist across lib/ and hooks/ and CI runs `pnpm test` in its sequence. Inference: an agent following the DoD can mark a task done without running tests, potentially shipping code with failing tests. CI still gates on tests, so the gap is in agent-facing guidance, not in the CI pipeline. Owner: AGENTS.md Definition of Done and Commands section. Uncertainty: the working protocol says 'Never leave the repo in a broken state' which implicitly covers tests, but the explicit gate list and the stale 'when added' annotation create ambiguity.",
+      "dimensionRefs": ["task-understanding"],
+      "subdimensionRefs": ["scope-boundary"],
+      "aiFixPrompt": "/better-harness fix this issue\n\nIn AGENTS.md, add `pnpm test passes` to the Definition of Done bullet list (after the lint bullet). Update the Commands section annotation for `pnpm test` from 'unit tests (when added)' to 'unit tests'.\n\n## Validation\n\n- Confirm the DoD bullet list includes `pnpm test`\n- Confirm the Commands section no longer says 'when added'\n- Run `pnpm test` to confirm the suite still passes",
+      "expectedArtifact": "Rule",
+      "expectedOutput": [
+        "An agent following the Definition of Done runs `pnpm test` as a required gate before marking a task done."
+      ]
+    },
+    {
+      "id": "orchestration-seam-unverified",
+      "title": "Silent wiring breaks in the interview orchestration seam escape CI",
+      "severity": "Medium",
+      "reason": "Fact: The screen↔hooks↔llm↔SpeechRecognition wiring is covered by only 3 jsdom lifecycle tests in hooks/use-interview.test.ts (busy guard, unmount abort, truncation-buffer reset). TASKS.md states the full browser flow was 'manually verified with a mock OpenAI-compatible endpoint' and lists Playwright as 'optional future work.' Inference: a silent wiring break in voice input, phase→panelist handoff, or the truncation-retry buffer wiring between interview-screen.tsx and use-interview.ts is not caught by `pnpm test` or CI. The pure-logic layers (engine.ts, phases.ts, llm.ts) are well-tested, but the integration seam between them is manually verified only. Owner: hooks/use-interview.test.ts include pattern and test coverage. Uncertainty: the code shows defensive patterns (busyRef guard, finally-block cleanup, AbortController per turn), so the risk is regression detection, not a known present break.",
+      "dimensionRefs": ["change-validation"],
+      "subdimensionRefs": ["relevant-check"],
+      "aiFixPrompt": "/better-harness fix this issue\n\nAdd integration tests that exercise the wiring between app/interview/interview-screen.tsx, hooks/use-interview.ts, and lib/llm.ts without requiring a live API key. Use the existing jsdom environment and stubbed fetch pattern from llm.test.ts. Cover at minimum: the phase→panelist handoff (moderator selects speaker, panelist produces a turn), the voice composer→hook→llm path (transcript submission triggers a turn), and the truncation-retry buffer wiring (onTruncationRetry resets the live buffer in the screen). Do not introduce Playwright or a browser dependency.\n\n## Validation\n\n- Run `pnpm test` and confirm the new integration tests pass\n- Temporarily break the phase→panelist handoff and confirm a test fails\n- Confirm `pnpm typecheck` and `pnpm lint` stay clean",
+      "expectedArtifact": "Test",
+      "expectedOutput": [
+        "A silent wiring break in the interview orchestration seam is caught by `pnpm test` in CI.",
+        "The phase→panelist handoff and voice composer→hook→llm path have automated regression protection."
+      ]
+    },
+    {
+      "id": "deploy-bypasses-ci",
+      "title": "Emergency deploy bypasses CI validation and ships without lint, type, or test",
+      "severity": "Medium",
+      "reason": "Fact: deploy.yml triggers on both `workflow_run: [CI] conclusion == success` for branches:[master] and manual `workflow_dispatch`. The `if` condition ORs them, so a manual dispatch deploys regardless of CI state. The deploy build job re-runs only `pnpm build`, not lint/type/test. No CODEOWNERS file exists and required-status-check config is not repo-owned (GitHub settings). Inference: a manual emergency redeploy can ship code that has not passed lint, typecheck, or tests, and the repo does not own a compensating branch-protection rule. Owner: .github/workflows/deploy.yml. Uncertainty: the bypass is intentional ('emergency redeploy'), and the normal path (push to master → CI → deploy) is correctly gated; the gap is that the manual path skips full validation.",
+      "dimensionRefs": ["reliable-delivery"],
+      "subdimensionRefs": ["acceptance-evidence"],
+      "aiFixPrompt": "/better-harness fix this issue\n\nIn .github/workflows/deploy.yml, add lint, typecheck, and test steps to the build job before the existing `pnpm build` step, so a `workflow_dispatch` deploy runs the same validation as CI. Keep the existing `workflow_run` trigger and Pages deployment steps unchanged.\n\n## Validation\n\n- Trigger a `workflow_dispatch` deploy and confirm lint/type/test run before build\n- Confirm a failing check stops the deploy before Pages upload\n- Confirm the normal `workflow_run` path still works unchanged",
+      "expectedArtifact": "Config",
+      "expectedOutput": [
+        "A `workflow_dispatch` deploy runs full validation (lint+type+test+build) before shipping, or is blocked when a check fails."
+      ]
+    },
+    {
+      "id": "memory-title-collision",
+      "title": "Duplicate project Memory titles create retrieval ambiguity",
+      "severity": "Low",
+      "reason": "Fact: The deterministic Memory integrity envelope reports 1 exact same-scope (Project) title collision among 32 reviewed titles, with status 'reviewed' and not truncated. Inference: two or more project Memories share an identical title, so a title-based SearchMemory lookup may retrieve the wrong body or miss the intended one, creating routing ambiguity for the agent. Bodies were not inspected (metadata-only policy); the specific colliding titles are unknown. Owner: workspace Qoder Memory (SearchMemory → update_memory route). Uncertainty: metadata similarity does not prove body duplication, conflict, or staleness; the collision may be benign if the bodies are complementary. This finding remains pending Asset Health / Repair Progress until independent repair review. Near-title similarity (1 candidate) is a manual review lead, not promoted.",
+      "dimensionRefs": ["learning-capture"],
+      "subdimensionRefs": ["loop-engineering"],
+      "aiFixPrompt": "/better-harness fix this issue\n\nUse SearchMemory with mode='fetch' to identify the exact colliding titles among the 32 project Memories. Inspect the colliding entries' scope and keywords. Use update_memory to rename or merge the duplicate so each project Memory title is unique. Do not delete a Memory without verifying its body content and scope first.\n\n## Validation\n\n- Re-run the Memory integrity scan (evidence-bundle with --include-memories) and confirm 0 exact collision groups\n- Confirm each project Memory title is unique",
+      "expectedArtifact": "Memory",
+      "expectedOutput": [
+        "Each project Memory title is unique, so a title-based search retrieves exactly one entry."
+      ]
+    }
+  ]
+}
