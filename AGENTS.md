@@ -33,6 +33,7 @@ report.
 
 - Code compiles: `pnpm typecheck` and `pnpm build` pass.
 - `pnpm lint` passes.
+- `pnpm test` passes.
 - New behavior is reachable from the UI or wired into the flow (no dead code drops).
 - `TASKS.md` status + progress log updated.
 - No violations of the hard constraints below.
@@ -80,7 +81,7 @@ pnpm dev            # local dev server
 pnpm lint           # eslint
 pnpm typecheck      # tsc --noEmit
 pnpm build          # next build (static export → out/)
-pnpm test           # unit tests (when added)
+pnpm test           # unit tests
 ```
 
 ## Testing guidance
