@@ -12,6 +12,7 @@ import {
   EMPTY_PROFILE,
   type DocumentSet,
   type InterviewSession,
+  type InterviewStatus,
   type LlmSettings,
   type Profile,
   type Report,
@@ -19,7 +20,7 @@ import {
 import { isLocalBaseUrl } from './utils';
 
 /** Bump when a persisted shape changes incompatibly. */
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 const PREFIX = 'substansi-lpdp';
 
@@ -214,11 +215,26 @@ export function saveDocuments(docs: DocumentSet): void {
 
 /* ── Interview session ───────────────────────────────────────────────────── */
 
+/** Known session statuses; stored JSON is user-editable, so validate it. */
+const SESSION_STATUSES: readonly InterviewStatus[] = [
+  'preparing',
+  'running',
+  'paused',
+  'wrapping',
+  'finished',
+  'aborted',
+];
+
+function isSessionStatus(value: unknown): value is InterviewStatus {
+  return typeof value === 'string' && SESSION_STATUSES.includes(value as InterviewStatus);
+}
+
 export function loadSession(): InterviewSession | null {
   const session = readJson<InterviewSession>(STORAGE_KEYS.session);
   if (!session || typeof session !== 'object') return null;
   if (!Array.isArray(session.turns)) return null;
   if (!Array.isArray(session.notes)) session.notes = [];
+  if (!isSessionStatus(session.status)) return null;
   return session;
 }
 

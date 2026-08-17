@@ -107,7 +107,7 @@ direction (2026-08-17); first task is voice input (P1-1).
 | P2-6-2 | Abuse review: multi-account heuristic, quota edge cases, webhook replay tests, minimal admin audit log | todo |
 | P2-7-1 | Disclaimer updates + privacy page rewrite (PLAN-V2 §9 table) + payments ToS (id+en) | todo |
 | P2-7-2 | README v2 (hosted + self-host/BYOK), CONTRIBUTING, env docs | todo |
-| P2-8-1 | Interview pause: engine + storage `paused` status, schema bump, pause/resume helpers + tests | todo |
+| P2-8-1 | Interview pause: engine + storage `paused` status, schema bump, pause/resume helpers + tests | done |
 | P2-8-2 | Interview pause: hook wiring (abort on pause, resume loop) + paused screen UI + i18n + tests | todo |
 
 ## Known follow-ups (small, non-blocking)
@@ -126,6 +126,21 @@ direction (2026-08-17); first task is voice input (P1-1).
 ## Progress log
 
 <!-- Newest first. Format: YYYY-MM-DD · TASK-ID · what changed · notes for next session -->
+
+- 2026-08-17 · P2-8-1 · feat(panel): interview pause groundwork (PLAN-V2 §10,
+  backend-independent half). `'paused'` added to `InterviewStatus`; engine
+  gained `pauseSession` (running/wrapping → paused, clock freezes for free
+  because `tickClock` only accumulates while running/wrapping) and
+  `resumePausedSession` (paused → running with a fresh checkpoint, so paused
+  time is never charged — same trick as `resumeSession`). `SCHEMA_VERSION`
+  bumped 1 → 2 and `loadSession` now validates the stored status against the
+  known set, so a stored paused session loads cleanly and user-edited garbage
+  is dropped. New tests in `lib/panel/engine.test.ts` (5) and
+  `lib/storage.test.ts` (6; `pnpm test` 329 pass). Note: the schema bump
+  wipes pre-existing stored sessions/documents/reports on first load
+  (`migrateIfNeeded`), settings/locale preserved — acceptable: pause is not
+  user-visible yet. Next session: P2-8-2 (hook pause/resume wiring, paused
+  screen UI, i18n, hook tests). Gates: lint, typecheck, test, build.
 
 - 2026-08-17 · plan · docs: PLAN-V2.md written — freemium public-launch plan
   (Vercel + Supabase + OpenRouter proxy + Midtrans credits Rp 2.000–5.000,

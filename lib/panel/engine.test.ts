@@ -8,8 +8,10 @@ import {
   evaluatePhase,
   followCandidateLanguage,
   lastPanelistQuestion,
+  pauseSession,
   planPanelistTurn,
   questionsInPhase,
+  resumePausedSession,
   resumeSession,
   tickClock,
 } from './engine';
@@ -83,6 +85,48 @@ describe('resumeSession (crash recovery, M3-6)', () => {
     const ticked = tickClock(resumed, resumed.tickedAt + 1000);
 
     expect(ticked.elapsedMs).toBe(10 * MINUTE + 1000);
+  });
+});
+
+describe('pauseSession / resumePausedSession (P2-8)', () => {
+  it('pauses a running session and freezes the clock', () => {
+    const current = { ...session(), elapsedMs: 12 * MINUTE };
+    const paused = pauseSession(current);
+    expect(paused.status).toBe('paused');
+
+    // Time spent paused never counts against the interview.
+    const ticked = tickClock(paused, paused.tickedAt + 5 * MINUTE);
+    expect(ticked.elapsedMs).toBe(12 * MINUTE);
+  });
+
+  it('can pause a session that is wrapping up', () => {
+    const current = { ...session(), status: 'wrapping' as const };
+    expect(pauseSession(current).status).toBe('paused');
+  });
+
+  it('leaves terminal sessions untouched', () => {
+    for (const status of ['preparing', 'finished', 'aborted'] as const) {
+      const current = { ...session(), status };
+      expect(pauseSession(current)).toBe(current);
+    }
+  });
+
+  it('does not charge time spent paused on resume', () => {
+    const paused = pauseSession({ ...session(), elapsedMs: 10 * MINUTE });
+    // Simulate resuming an hour after pausing.
+    const stale = { ...paused, tickedAt: Date.now() - 60 * MINUTE };
+    const resumed = resumePausedSession(stale);
+    expect(resumed.status).toBe('running');
+
+    const ticked = tickClock(resumed, resumed.tickedAt + 1000);
+    expect(ticked.elapsedMs).toBe(10 * MINUTE + 1000);
+  });
+
+  it('leaves sessions that are not paused untouched on resume', () => {
+    const current = session();
+    expect(resumePausedSession(current)).toBe(current);
+    const finished = { ...session(), status: 'finished' as const };
+    expect(resumePausedSession(finished)).toBe(finished);
   });
 });
 
