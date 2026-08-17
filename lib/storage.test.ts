@@ -4,12 +4,17 @@ import {
   deleteReport,
   loadReport,
   loadReports,
+  loadSession,
   MAX_REPORT_HISTORY,
+  migrateIfNeeded,
+  SCHEMA_VERSION,
+  saveSession,
   settingsAreUsable,
   STORAGE_KEYS,
   upsertReport,
 } from './storage';
-import { EMPTY_PROFILE, type Report } from './types';
+import { createSession } from './panel/engine';
+import { EMPTY_PROFILE, type InterviewSession, type Report } from './types';
 
 /**
  * The vitest environment is `node`, so provide a minimal in-memory
@@ -169,3 +174,69 @@ describe('report history storage', () => {
     expect(loadReports().map((report) => report.id)).toEqual(['valid']);
   });
 });
+
+describe('session storage (pause support, P2-8)', () => {
+  function makeSession(status?: InterviewSession['status']): InterviewSession {
+    const created = createSession({ profile: EMPTY_PROFILE, model: 'test-model', locale: 'id' });
+    return status ? { ...created, status } : created;
+  }
+
+  it('round-trips a paused session', () => {
+    saveSession(makeSession('paused'));
+    const loaded = loadSession();
+    expect(loaded?.status).toBe('paused');
+  });
+
+  it('loads every known status', () => {
+    for (const status of ['preparing', 'running', 'paused', 'wrapping', 'finished', 'aborted'] as const) {
+      saveSession(makeSession(status));
+      expect(loadSession()?.status).toBe(status);
+    }
+  });
+
+  it('rejects a session with an unknown status', () => {
+    saveSession(makeSession());
+    const stored = JSON.parse(window.localStorage.getItem(STORAGE_KEYS.session)!);
+    stored.status = 'teleporting';
+    window.localStorage.setItem(STORAGE_KEYS.session, JSON.stringify(stored));
+    expect(loadSession()).toBeNull();
+  });
+
+  it('rejects a session without a turns array', () => {
+    const session = makeSession();
+    window.localStorage.setItem(
+      STORAGE_KEYS.session,
+      JSON.stringify({ ...session, turns: 'not-an-array' }),
+    );
+    expect(loadSession()).toBeNull();
+  });
+});
+
+describe('migrateIfNeeded (schema bump, P2-8)', () => {
+  it('drops session data written by an older schema', () => {
+    expect(SCHEMA_VERSION).toBe(2);
+    saveSession(makeSessionForMigration());
+    // Simulate data written by the previous schema, then re-stamp it old.
+    window.localStorage.setItem(STORAGE_KEYS.version, '1');
+    window.localStorage.setItem(STORAGE_KEYS.documents, '{}');
+    window.localStorage.setItem(STORAGE_KEYS.settings, '{}');
+
+    migrateIfNeeded();
+
+    expect(loadSession()).toBeNull();
+    expect(window.localStorage.getItem(STORAGE_KEYS.documents)).toBeNull();
+    // Settings survive the migration: expensive to re-enter.
+    expect(window.localStorage.getItem(STORAGE_KEYS.settings)).toBe('{}');
+    expect(window.localStorage.getItem(STORAGE_KEYS.version)).toBe(String(SCHEMA_VERSION));
+  });
+
+  it('does nothing when the stored version is current', () => {
+    saveSession(makeSessionForMigration());
+    migrateIfNeeded();
+    expect(loadSession()).not.toBeNull();
+  });
+});
+
+function makeSessionForMigration(): InterviewSession {
+  return createSession({ profile: EMPTY_PROFILE, model: 'test-model', locale: 'id' });
+}

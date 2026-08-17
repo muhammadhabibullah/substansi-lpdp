@@ -86,6 +86,30 @@ direction (2026-08-17); first task is voice input (P1-1).
 | P1-10 | Strict interjection limit: other roles may interrupt another session block with exactly one question each — enforced deterministically in the moderator engine instead of relying on prompt wording alone | done |
 | P1-11 | WhatsApp-style composer: unified text & voice bar — idle pill input with mic/send swap, recording bar (timer + waveform, pause/resume, no live text), then editable transcript review before sending (user feedback #6) | done |
 
+## P2 — Freemium public launch (per PLAN-V2.md — planned, not started)
+
+| ID | Task | Status |
+|---|---|---|
+| P2-1-1 | Remove `output: 'export'`/`basePath`; add `app/api` route-handler skeleton + `server/` helpers; `.env.example`; update AGENTS.md hard constraints #1/#2, commands, directory layout | todo |
+| P2-1-2 | Move deploy from GitHub Pages to Vercel (project settings + env); CI keeps lint/typecheck/test + BYOK-mode build job; extend key-leak scan to `server/` | todo |
+| P2-2-1 | Supabase Auth wiring: login/signup UI (magic link + Google), session provider, account card | todo |
+| P2-2-2 | Managed mode in `lib/llm.ts` + settings selector (Akun/BYOK), session token as key, `NEXT_PUBLIC_MODE` flag | todo |
+| P2-3-1 | Spike: verify OpenRouter model availability/cost for PLAN-V2 §3 defaults; pin `MODEL_TIER_MAP` | todo |
+| P2-3-2 | `/api/v1/chat/completions` proxy: auth, tier→model resolution, quotas, clamps, SSE relay, usage metering, disconnect abort | todo |
+| P2-3-3 | Upstash rate limits + free-quota counters + monthly spend cap; typed error bodies via `describeLlmError` | todo |
+| P2-4-1 | Spike: Midtrans sandbox channel minimums for Rp 2.000; decide channel list/pack bundling | todo |
+| P2-4-2 | Orders endpoint + Snap popup + upgrade tier cards UI | todo |
+| P2-4-3 | Webhook: signature verify, idempotent updates, credit grant; status polling; billing page | todo |
+| P2-5-1 | `testimonials` table + RLS; submit endpoint (gates + moderation checks) | todo |
+| P2-5-2 | `/testimoni` page (list + form + pending state) | todo |
+| P2-5-3 | Admin moderation page; landing featured carousel | todo |
+| P2-6-1 | CORS allowlist, payload caps, header hygiene, auth rate limits; Turnstile decision (env-gated) | todo |
+| P2-6-2 | Abuse review: multi-account heuristic, quota edge cases, webhook replay tests, minimal admin audit log | todo |
+| P2-7-1 | Disclaimer updates + privacy page rewrite (PLAN-V2 §9 table) + payments ToS (id+en) | todo |
+| P2-7-2 | README v2 (hosted + self-host/BYOK), CONTRIBUTING, env docs | todo |
+| P2-8-1 | Interview pause: engine + storage `paused` status, schema bump, pause/resume helpers + tests | done |
+| P2-8-2 | Interview pause: hook wiring (abort on pause, resume loop) + paused screen UI + i18n + tests | todo |
+
 ## Known follow-ups (small, non-blocking)
 
 - README screenshots are not committed yet (M6-1); capture from a real session.
@@ -102,6 +126,33 @@ direction (2026-08-17); first task is voice input (P1-1).
 ## Progress log
 
 <!-- Newest first. Format: YYYY-MM-DD · TASK-ID · what changed · notes for next session -->
+
+- 2026-08-17 · P2-8-1 · feat(panel): interview pause groundwork (PLAN-V2 §10,
+  backend-independent half). `'paused'` added to `InterviewStatus`; engine
+  gained `pauseSession` (running/wrapping → paused, clock freezes for free
+  because `tickClock` only accumulates while running/wrapping) and
+  `resumePausedSession` (paused → running with a fresh checkpoint, so paused
+  time is never charged — same trick as `resumeSession`). `SCHEMA_VERSION`
+  bumped 1 → 2 and `loadSession` now validates the stored status against the
+  known set, so a stored paused session loads cleanly and user-edited garbage
+  is dropped. New tests in `lib/panel/engine.test.ts` (5) and
+  `lib/storage.test.ts` (6; `pnpm test` 329 pass). Note: the schema bump
+  wipes pre-existing stored sessions/documents/reports on first load
+  (`migrateIfNeeded`), settings/locale preserved — acceptable: pause is not
+  user-visible yet. Next session: P2-8-2 (hook pause/resume wiring, paused
+  screen UI, i18n, hook tests). Gates: lint, typecheck, test, build.
+
+- 2026-08-17 · plan · docs: PLAN-V2.md written — freemium public-launch plan
+  (Vercel + Supabase + OpenRouter proxy + Midtrans credits Rp 2.000–5.000,
+  testimonials, security/anti-abuse, disclaimer & data-policy rewrite, and
+  interview pause). P2 milestone rows added below Post-v1, all `todo`.
+  Decisions made: hosted mode = OpenAI-compatible proxy so `lib/llm.ts` stays
+  unchanged (virtual `main`/`cheap` model ids); BYOK kept for self-host via
+  `NEXT_PUBLIC_MODE`; credits model (1 credit = 1 interview, 30-day expiry);
+  pause = new `paused` status + abort in-flight turn (AI SDK v4 `abortSignal`
+  already wired — no SDK change needed). Next session: start at P2-1-1
+  (backend scaffold + AGENTS.md constraint rewrite) or P2-8-1 (pause,
+  backend-independent).
 
 - 2026-08-17 · P1-11 · feat(interview): WhatsApp-style unified composer (user
   feedback #6). The Ketik/Suara toggle and the live transcript field are gone;

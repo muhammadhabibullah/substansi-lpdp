@@ -1,5 +1,10 @@
 # Substansi LPDP — AI Mock Interviewer
 
+> **V2 note:** the freemium public-launch plan (backend, Midtrans payments,
+> OpenRouter tiers, testimonials, pause) lives in [PLAN-V2.md](./PLAN-V2.md).
+> Where they conflict, PLAN-V2.md supersedes §3/§6/§7 of this document; this
+> document remains the interview format/product spec (§1, §2, §5).
+
 Open-source web app that simulates the **Seleksi Substansi (wawancara) LPDP** with a three-person AI panel, conducted primarily in Bahasa Indonesia (with English segments for overseas applicants), and ends with a structured grading report and specific feedback.
 
 ## 1. Product Overview

@@ -82,6 +82,31 @@ export function resumeSession(session: InterviewSession): InterviewSession {
   return { ...session, tickedAt: Date.now() };
 }
 
+/**
+ * Pause an in-progress session (PLAN-V2 §10). The clock freezes for free:
+ * `tickClock` only accumulates while the session is `running`/`wrapping`, so a
+ * `paused` session stops charging time the moment it is persisted.
+ */
+export function pauseSession(session: InterviewSession): InterviewSession {
+  if (session.status !== 'running' && session.status !== 'wrapping') {
+    return session;
+  }
+  return { ...session, status: 'paused' };
+}
+
+/**
+ * Resume a paused session. The elapsed-time checkpoint is reset the same way
+ * `resumeSession` does it, so time spent paused is never charged against the
+ * interview.
+ */
+export function resumePausedSession(
+  session: InterviewSession,
+  now = Date.now(),
+): InterviewSession {
+  if (session.status !== 'paused') return session;
+  return { ...session, status: 'running', tickedAt: now };
+}
+
 export function addTurn(
   session: InterviewSession,
   turn: Omit<TranscriptTurn, 'id' | 'atMs'> & { atMs?: number },
