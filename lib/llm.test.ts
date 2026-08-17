@@ -280,6 +280,48 @@ describe('toLlmError', () => {
     expect(toLlmError({}).kind).toBe('unknown');
     expect(toLlmError('string error').kind).toBe('unknown');
   });
+
+  it('keeps the provider message verbatim for status-coded errors', () => {
+    const error = toLlmError({
+      statusCode: 429,
+      message:
+        'Rate limit reached for model `llama-3.3-70b-versatile`. Please try again in 14m6.72s.',
+    });
+    expect(error.kind).toBe('rate-limit');
+    expect(error.status).toBe(429);
+    expect(error.message).toContain('Rate limit reached');
+  });
+
+  it('keeps bare string errors verbatim and classifies rate-limit phrasing', () => {
+    const text = 'Rate limit reached for model `x` in organization `y`';
+    const error = toLlmError(text);
+    expect(error.kind).toBe('rate-limit');
+    expect(error.message).toBe(text);
+    expect(toLlmError('boom').message).toBe('boom');
+  });
+
+  it('extracts the message from a nested error payload', () => {
+    const error = toLlmError({
+      error: {
+        message: 'Model is overloaded',
+        type: 'server',
+        code: 'overloaded',
+      },
+    });
+    expect(error.kind).toBe('unknown');
+    expect(error.message).toBe('Model is overloaded');
+  });
+
+  it('unwraps the SDK RetryError to the original provider failure', () => {
+    const error = toLlmError({
+      name: 'RetryError',
+      message: 'Failed after 2 attempts. Last error: Rate limit reached.',
+      lastError: { statusCode: 429, message: 'Rate limit reached for model `x`.' },
+    });
+    expect(error.kind).toBe('rate-limit');
+    expect(error.status).toBe(429);
+    expect(error.message).toContain('Rate limit reached');
+  });
 });
 
 describe('extractJson', () => {
@@ -752,6 +794,78 @@ describe('streamComplete truncation recovery (finishReason "length")', () => {
 
     // Exactly one retry, no more.
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('streamComplete surfaces provider errors to the caller', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  const GROQ_RATE_LIMIT =
+    'Rate limit reached for model `llama-3.3-70b-versatile` in organization ' +
+    '`org_01` service tier `on_demand` on tokens per day (TPD): Limit 100000, ' +
+    'Used 95431, Requested 5549. Please try again in 14m6.72s.';
+
+  it('maps a 429 error response onto a retryable rate-limit with the provider message', async () => {
+    const fetchMock = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            error: {
+              message: GROQ_RATE_LIMIT,
+              type: 'tokens',
+              code: 'rate_limit_exceeded',
+            },
+          }),
+          { status: 429, headers: { 'content-type': 'application/json' } },
+        ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    let surfaced: LlmError | undefined;
+    try {
+      await streamComplete({
+        settings,
+        messages: [{ role: 'user', content: 'ping' }],
+      });
+    } catch (caught) {
+      surfaced = toLlmError(caught);
+    }
+
+    expect(surfaced?.kind).toBe('rate-limit');
+    expect(surfaced?.status).toBe(429);
+    expect(surfaced?.message).toContain('Rate limit reached');
+    expect(surfaced?.retryable).toBe(true);
+  });
+
+  it('rethrows provider errors reported mid-stream instead of dropping them', async () => {
+    const sse = [
+      `data: ${JSON.stringify({ id: '1', object: 'chat.completion.chunk', created: 0, model: 'llama-3.3-70b-versatile', choices: [{ index: 0, delta: { content: 'Halo' }, finish_reason: null }] })}\n\n`,
+      `data: ${JSON.stringify({ error: { message: GROQ_RATE_LIMIT, type: 'tokens', code: 'rate_limit_exceeded' } })}\n\n`,
+    ].join('');
+    const fetchMock = vi.fn(
+      async () =>
+        new Response(sse, {
+          status: 200,
+          headers: { 'content-type': 'text/event-stream' },
+        }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+
+    let surfaced: LlmError | undefined;
+    try {
+      await streamComplete({
+        settings,
+        messages: [{ role: 'user', content: 'ping' }],
+      });
+    } catch (caught) {
+      surfaced = toLlmError(caught);
+    }
+
+    expect(surfaced).toBeDefined();
+    expect(surfaced?.kind).toBe('rate-limit');
+    expect(surfaced?.message).toContain('Rate limit reached');
   });
 });
 

@@ -9,6 +9,8 @@
  * compile error.
  */
 
+import type { LlmError } from './llm';
+
 export type Locale = 'id' | 'en';
 
 export const LOCALES: readonly Locale[] = ['id', 'en'] as const;
@@ -1317,4 +1319,55 @@ export function format(
   return template.replace(/\{(\w+)\}/g, (match, key: string) =>
     key in values ? String(values[key]) : match,
   );
+}
+
+/* ── LLM error descriptions ─────────────────────────────────────────────── */
+
+/** Localized description of an LLM failure, plus the provider's own message. */
+export interface LlmErrorDescription {
+  /** User-friendly, localized explanation of the failure kind. */
+  summary: string;
+  /**
+   * The endpoint's raw error message (e.g. a rate-limit explanation with the
+   * wait time), when it adds information beyond the summary.
+   */
+  detail?: string;
+}
+
+/**
+ * Map an `LlmError` onto localized copy while keeping the provider's own
+ * message as `detail`. `notConfiguredCopy` lets screens with their own
+ * not-configured wording (e.g. Settings' connection test) override the
+ * default.
+ */
+export function describeLlmError(
+  error: LlmError,
+  c: Copy,
+  notConfiguredCopy?: string,
+): LlmErrorDescription {
+  let summary: string;
+  switch (error.kind) {
+    case 'auth':
+      summary = c.interview.authFailed;
+      break;
+    case 'rate-limit':
+      summary = c.interview.rateLimited;
+      break;
+    case 'network':
+      summary = c.interview.networkFailed;
+      break;
+    case 'bad-response':
+      summary = c.interview.streamInterrupted;
+      break;
+    case 'not-configured':
+      summary = notConfiguredCopy ?? c.errors.missingSettingsBody;
+      break;
+    default:
+      summary = error.message || c.common.unknownError;
+  }
+  const detail =
+    error.message.length > 0 && error.message !== summary
+      ? error.message
+      : undefined;
+  return { summary, detail };
 }

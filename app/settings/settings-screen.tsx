@@ -26,7 +26,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select } from '@/components/ui/select';
 import { useSettings } from '@/hooks/use-app-state';
-import { LOCALES, LOCALE_LABELS, isLocale } from '@/lib/i18n';
+import { LOCALES, LOCALE_LABELS, describeLlmError, isLocale } from '@/lib/i18n';
 import {
   findPreset,
   LlmError,
@@ -351,14 +351,32 @@ export function SettingsScreen() {
                 </AlertDescription>
               </Alert>
             ) : (
-              <Alert variant="destructive">
-                <XCircle aria-hidden />
-                <AlertDescription>
-                  {f(c.settings.testFailed, {
-                    error: describeError(test.result, c),
-                  })}
-                </AlertDescription>
-              </Alert>
+              (() => {
+                const described = test.result.error
+                  ? describeLlmError(
+                      test.result.error,
+                      c,
+                      c.settings.testMissingFields,
+                    )
+                  : null;
+                return (
+                  <Alert variant="destructive">
+                    <XCircle aria-hidden />
+                    <AlertDescription>
+                      <p>
+                        {f(c.settings.testFailed, {
+                          error: described?.summary ?? c.common.unknownError,
+                        })}
+                      </p>
+                      {described?.detail ? (
+                        <p className="mt-2 max-h-28 overflow-y-auto whitespace-pre-wrap break-words rounded-md border border-border bg-muted/50 px-2 py-1.5 font-mono text-xs">
+                          {described.detail}
+                        </p>
+                      ) : null}
+                    </AlertDescription>
+                  </Alert>
+                );
+              })()
             )
           ) : null}
         </CardContent>
@@ -450,25 +468,4 @@ export function SettingsScreen() {
       </Card>
     </div>
   );
-}
-
-/** Map an `LlmError` kind onto localized copy, falling back to its message. */
-function describeError(
-  result: ConnectionTestResult,
-  c: ReturnType<typeof useI18n>['c'],
-): string {
-  const error = result.error;
-  if (!error) return c.common.unknownError;
-  switch (error.kind) {
-    case 'auth':
-      return c.interview.authFailed;
-    case 'rate-limit':
-      return c.interview.rateLimited;
-    case 'network':
-      return c.interview.networkFailed;
-    case 'not-configured':
-      return c.settings.testMissingFields;
-    default:
-      return error.message || c.common.unknownError;
-  }
 }

@@ -29,7 +29,7 @@ import { useDocuments, useProfile, useSettings } from '@/hooks/use-app-state';
 import { useInterview, type InterviewError } from '@/hooks/use-interview';
 import { useVoiceInput, type UseVoiceInput } from '@/hooks/use-voice-input';
 import { missingRequiredDocs } from '@/lib/documents';
-import type { LlmError } from '@/lib/llm';
+import { describeLlmError, type LlmErrorDescription } from '@/lib/i18n';
 import { PHASES, phaseIndex, progressPercent } from '@/lib/panel/phases';
 import type { PanelistId, TranscriptTurn } from '@/lib/types';
 import { cn, formatClock } from '@/lib/utils';
@@ -57,6 +57,7 @@ export function InterviewScreen() {
   const inputRef = React.useRef<HTMLTextAreaElement>(null);
 
   const { session, busy, streaming, error, warning } = interview;
+  const errorDescription = error ? describeInterviewError(error, c) : null;
 
   // Voice input follows the session language (PLAN §1 language behavior).
   const voice = useVoiceInput({ lang: recognitionLang(session?.lang ?? 'id') });
@@ -295,12 +296,17 @@ export function InterviewScreen() {
       </div>
 
       {/* Error recovery (M5-3) */}
-      {error ? (
+      {errorDescription ? (
         <Alert variant="destructive" className="mt-4">
           <AlertTriangle aria-hidden />
           <AlertTitle>{c.interview.errorTitle}</AlertTitle>
           <AlertDescription>
-            <p>{describeLlmError(error, c)}</p>
+            <p>{errorDescription.summary}</p>
+            {errorDescription.detail ? (
+              <p className="mt-2 max-h-28 overflow-y-auto whitespace-pre-wrap break-words rounded-md border border-border bg-muted/50 px-2 py-1.5 font-mono text-xs">
+                {errorDescription.detail}
+              </p>
+            ) : null}
             <div className="mt-3 flex flex-wrap gap-2">
               <Button size="sm" variant="secondary" onClick={interview.retry}>
                 <RotateCcw aria-hidden />
@@ -612,23 +618,12 @@ function StreamingBubble({ panelist, text }: { panelist: PanelistId; text: strin
 
 type Copy = ReturnType<typeof useI18n>['c'];
 
-function describeLlmError(error: InterviewError, c: Copy): string {
-  if (error.kind !== 'llm') return c.common.unknownError;
-  const llmError: LlmError = error.error;
-  switch (llmError.kind) {
-    case 'auth':
-      return c.interview.authFailed;
-    case 'rate-limit':
-      return c.interview.rateLimited;
-    case 'network':
-      return c.interview.networkFailed;
-    case 'bad-response':
-      return c.interview.streamInterrupted;
-    case 'not-configured':
-      return c.errors.missingSettingsBody;
-    default:
-      return llmError.message || c.common.unknownError;
-  }
+function describeInterviewError(
+  error: InterviewError,
+  c: Copy,
+): LlmErrorDescription {
+  if (error.kind !== 'llm') return { summary: c.common.unknownError };
+  return describeLlmError(error.error, c);
 }
 
 function describeWarning(warning: InterviewError, c: Copy): string {

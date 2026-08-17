@@ -122,6 +122,16 @@ function statusToKind(status: number): LlmErrorKind {
   return 'bad-response';
 }
 
+/**
+ * Best-effort kind for errors that carry no status code of their own, e.g.
+ * mid-stream provider failures surfaced as bare text ("Rate limit reached for
+ * model ..."). Only phrasings that are safe to act on are recognized.
+ */
+function kindFromErrorText(text: string): LlmErrorKind {
+  if (/rate.?limit/i.test(text)) return 'rate-limit';
+  return 'unknown';
+}
+
 /** Map anything thrown by the SDK/fetch onto an `LlmError`. */
 export function toLlmError(error: unknown): LlmError {
   if (error instanceof LlmError) return error;
@@ -133,25 +143,69 @@ export function toLlmError(error: unknown): LlmError {
     return new LlmError('aborted', error.message);
   }
 
+  // Mid-stream provider failures can arrive as bare strings carrying the
+  // endpoint's own message; keep it verbatim so the UI can show it.
+  if (typeof error === 'string') {
+    const text = error.trim();
+    if (text.length > 0) {
+      return new LlmError(kindFromErrorText(text), text);
+    }
+  }
+
   // AI SDK errors carry a `statusCode`; fetch/CORS failures are TypeErrors.
-  const candidate = error as { statusCode?: unknown; status?: unknown; message?: unknown };
+  // Retry-exhausted calls arrive wrapped in an SDK `RetryError` whose
+  // `lastError` (also mirrored on `errors`) is the original provider error,
+  // so inspect the wrapper and its wrapped failures.
+  const candidate = error as {
+    statusCode?: unknown;
+    status?: unknown;
+    message?: unknown;
+    error?: unknown;
+    cause?: unknown;
+    lastError?: unknown;
+  };
+  const wrapped =
+    candidate?.lastError && typeof candidate.lastError === 'object'
+      ? (candidate.lastError as { statusCode?: unknown; status?: unknown })
+      : candidate?.cause && typeof candidate.cause === 'object'
+        ? (candidate.cause as { statusCode?: unknown; status?: unknown })
+        : undefined;
   const status =
     typeof candidate?.statusCode === 'number'
       ? candidate.statusCode
       : typeof candidate?.status === 'number'
         ? candidate.status
-        : undefined;
+        : typeof wrapped?.statusCode === 'number'
+          ? wrapped.statusCode
+          : typeof wrapped?.status === 'number'
+            ? wrapped.status
+            : undefined;
+
+  // Some wrappers throw the parsed error payload itself ({ error: { message } }).
+  const nestedMessage =
+    candidate?.error && typeof candidate.error === 'object'
+      ? (candidate.error as { message?: unknown }).message
+      : undefined;
+  const wrappedMessage =
+    wrapped && typeof (wrapped as { message?: unknown }).message === 'string'
+      ? (wrapped as { message?: string }).message
+      : undefined;
 
   const message =
     typeof candidate?.message === 'string' && candidate.message.length > 0
       ? candidate.message
-      : 'LLM request failed';
+      : typeof nestedMessage === 'string' && nestedMessage.length > 0
+        ? nestedMessage
+        : (wrappedMessage ?? 'LLM request failed');
 
   if (status !== undefined) {
     return new LlmError(statusToKind(status), message, status);
   }
   if (error instanceof TypeError) {
     return new LlmError('network', message);
+  }
+  if (message !== 'LLM request failed') {
+    return new LlmError(kindFromErrorText(message), message);
   }
   return new LlmError('unknown', message);
 }
@@ -583,11 +637,20 @@ export async function streamComplete(options: StreamOptions): Promise<string> {
       maxRetries: 1,
     });
 
+    // Consume `fullStream` rather than `textStream`: the latter silently
+    // filters out `error` parts, so a provider failure reported mid-stream
+    // (e.g. a rate limit hit partway through) would never reach the UI.
     let text = '';
-    for await (const delta of result.textStream) {
-      text += delta;
-      options.onDelta?.(delta);
+    let streamError: unknown;
+    for await (const part of result.fullStream) {
+      if (part.type === 'text-delta') {
+        text += part.textDelta;
+        options.onDelta?.(part.textDelta);
+      } else if (part.type === 'error') {
+        streamError = part.error;
+      }
     }
+    if (streamError !== undefined) throw streamError;
     const finishReason = await result.finishReason.catch(() => 'unknown');
     return { text: text.trim(), finishReason };
   };

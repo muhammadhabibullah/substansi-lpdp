@@ -309,3 +309,12 @@ direction (2026-08-17); first task is voice input (P1-1).
   rule so a slipped-through session fails fast with `not-configured` instead of
   a 401 mid-interview. Review/blocked/landing copy now mentions the key (id+en).
   New tests in `lib/storage.test.ts` (4) and `lib/llm.test.ts` (1).
+- 2026-08-17 · ad-hoc · fix(llm): surface provider API error messages (e.g.
+  Groq rate-limit payloads) in the UI instead of only generic copy.
+  `toLlmError` now keeps the endpoint's message verbatim (bare strings,
+  `{ error: { message } }` payloads, SDK `RetryError.lastError` unwrap), and
+  `streamComplete` consumes `fullStream` so mid-stream `error` parts are no
+  longer silently dropped. New shared `describeLlmError` in `lib/i18n.ts`
+  returns a localized summary plus the provider detail, rendered in a
+  monospace block on the interview, settings (connection test), and report
+  screens. New tests in `lib/llm.test.ts` (7) and `lib/i18n.test.ts` (5).

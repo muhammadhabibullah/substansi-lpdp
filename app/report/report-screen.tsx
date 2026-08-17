@@ -30,6 +30,7 @@ import {
 import { Progress } from '@/components/ui/progress';
 import { useSettings } from '@/hooks/use-app-state';
 import { downloadMarkdown } from '@/lib/export-markdown';
+import { describeLlmError } from '@/lib/i18n';
 import { toLlmError, type LlmError } from '@/lib/llm';
 import { generateReport, type ReportStep } from '@/lib/report';
 import { bandTone, getDimension } from '@/lib/rubric';
@@ -231,13 +232,19 @@ export function ReportScreen() {
   }
 
   if (state.status === 'failed') {
+    const described = describeLlmError(state.error, c);
     return (
       <div className="container max-w-2xl py-16">
         <Alert variant="destructive">
           <AlertTriangle aria-hidden />
           <AlertTitle>{c.report.generateFailed}</AlertTitle>
           <AlertDescription>
-            <p>{state.error.message}</p>
+            <p>{described.summary}</p>
+            {described.detail ? (
+              <p className="mt-2 max-h-28 overflow-y-auto whitespace-pre-wrap break-words rounded-md border border-border bg-muted/50 px-2 py-1.5 font-mono text-xs">
+                {described.detail}
+              </p>
+            ) : null}
             <div className="mt-3 flex flex-wrap gap-2">
               <Button size="sm" variant="secondary" onClick={() => void build()}>
                 <RotateCcw aria-hidden />
