@@ -323,6 +323,9 @@ const id = {
     recoveredBody:
       'Wawancara Anda dilanjutkan dari titik terakhir yang tersimpan di browser ini.',
     pausedTitle: 'Sesi dijeda',
+    pausedBody:
+      'Wawancara dijeda tanpa kehilangan progres. Timer dibekukan dan transkrip disembunyikan sampai Anda melanjutkan.',
+    pausedTimerNote: 'Waktu tidak berjalan selama dijeda — tersisa {time}.',
     pause: 'Jeda',
     resume: 'Lanjutkan',
     languageSwitchNotice: 'Pewawancara beralih ke bahasa Inggris.',
@@ -958,6 +961,9 @@ const en: Copy = {
     recoveredTitle: 'Session restored',
     recoveredBody: 'Your interview resumed from the last point saved in this browser.',
     pausedTitle: 'Session paused',
+    pausedBody:
+      'The interview is paused without losing progress. The timer is frozen and the transcript is hidden until you resume.',
+    pausedTimerNote: 'Time does not run while paused — {time} remaining.',
     pause: 'Pause',
     resume: 'Resume',
     languageSwitchNotice: 'The panelist switched to English.',

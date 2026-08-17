@@ -88,12 +88,19 @@ beforeEach(() => {
   mockedStreamComplete.mockReset();
   mockedStreamComplete.mockImplementation(
     (options: StreamOptions) =>
-      new Promise<string>((resolve) => {
+      new Promise<string>((resolve, reject) => {
         streams.push({
           options,
           delta: (text) => options.onDelta?.(text),
           truncationRetry: () => options.onTruncationRetry?.(),
           resolve,
+        });
+        // Mirror the real `streamComplete`: a caller-initiated abort rejects
+        // with an AbortError, which `toLlmError` maps onto `aborted`.
+        options.signal?.addEventListener('abort', () => {
+          const abortError = new Error('The operation was aborted.');
+          abortError.name = 'AbortError';
+          reject(abortError);
         });
       }),
   );
@@ -229,5 +236,125 @@ describe('useInterview turn lifecycle', () => {
         (turn) => turn.speaker === 'akademisi' && turn.text === 'Pertanyaan lengkap hasil retry.',
       ),
     ).toBe(true);
+  });
+});
+
+describe('useInterview pause/resume (P2-8)', () => {
+  it('pause aborts the in-flight stream and persists the paused session', async () => {
+    const { result } = await renderInterview();
+
+    await React.act(async () => {
+      result.current.start();
+    });
+    const stream = streams[0]!;
+    const signal = stream.options.signal;
+    expect(signal?.aborted).toBe(false);
+
+    // Some partial text was streaming when the candidate hits pause.
+    await React.act(async () => {
+      stream.delta('Pertanyaan yang belum sel');
+    });
+    expect(result.current.streaming?.text).toBe('Pertanyaan yang belum sel');
+
+    await React.act(async () => {
+      result.current.pause();
+    });
+
+    expect(signal?.aborted).toBe(true);
+    expect(result.current.session?.status).toBe('paused');
+    expect(result.current.busy).toBe(false);
+    expect(result.current.streaming).toBeNull();
+    expect(result.current.error).toBeNull();
+    // The aborted turn was never committed to the transcript.
+    expect(result.current.session?.turns).toHaveLength(0);
+  });
+
+  it('resume regenerates the panel turn when none is awaiting an answer', async () => {
+    const { result } = await renderInterview();
+
+    await React.act(async () => {
+      result.current.start();
+    });
+    await React.act(async () => {
+      result.current.pause();
+    });
+    expect(streams).toHaveLength(1);
+
+    // The aborted opening turn was never committed, so resume asks the panel
+    // for a fresh turn.
+    await React.act(async () => {
+      result.current.resume();
+    });
+    expect(result.current.session?.status).toBe('running');
+    expect(streams).toHaveLength(2);
+
+    await React.act(async () => {
+      streams[1]!.resolve('Selamat datang kembali. Silakan perkenalkan diri Anda.');
+    });
+    expect(
+      result.current.session?.turns.some(
+        (turn) => turn.text === 'Selamat datang kembali. Silakan perkenalkan diri Anda.',
+      ),
+    ).toBe(true);
+  });
+
+  it('resume waits for the candidate when a panelist question is pending', async () => {
+    const { result } = await renderInterview();
+
+    await React.act(async () => {
+      result.current.start();
+    });
+    await React.act(async () => {
+      streams[0]!.resolve('Silakan perkenalkan diri Anda.');
+    });
+
+    await React.act(async () => {
+      result.current.pause();
+    });
+    expect(streams).toHaveLength(1);
+
+    // The last committed turn is a panelist question, so resume must not
+    // regenerate it — the candidate simply answers.
+    await React.act(async () => {
+      result.current.resume();
+    });
+    expect(result.current.session?.status).toBe('running');
+    expect(streams).toHaveLength(1);
+    expect(result.current.busy).toBe(false);
+  });
+
+  it('pause is a no-op outside a running session', async () => {
+    const { result } = await renderInterview();
+
+    // No session yet: pause does nothing.
+    await React.act(async () => {
+      result.current.pause();
+    });
+    expect(result.current.session).toBeNull();
+
+    await React.act(async () => {
+      result.current.start();
+    });
+    await React.act(async () => {
+      streams[0]!.resolve('Pertanyaan pembuka.');
+    });
+    await React.act(async () => {
+      result.current.pause();
+    });
+
+    // Pausing again while paused changes nothing.
+    await React.act(async () => {
+      result.current.pause();
+    });
+    expect(result.current.session?.status).toBe('paused');
+
+    // Resume is a no-op once already running again.
+    await React.act(async () => {
+      result.current.resume();
+    });
+    await React.act(async () => {
+      result.current.resume();
+    });
+    expect(result.current.session?.status).toBe('running');
   });
 });

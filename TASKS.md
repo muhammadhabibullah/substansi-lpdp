@@ -108,7 +108,7 @@ direction (2026-08-17); first task is voice input (P1-1).
 | P2-7-1 | Disclaimer updates + privacy page rewrite (PLAN-V2 §9 table) + payments ToS (id+en) | todo |
 | P2-7-2 | README v2 (hosted + self-host/BYOK), CONTRIBUTING, env docs | todo |
 | P2-8-1 | Interview pause: engine + storage `paused` status, schema bump, pause/resume helpers + tests | done |
-| P2-8-2 | Interview pause: hook wiring (abort on pause, resume loop) + paused screen UI + i18n + tests | todo |
+| P2-8-2 | Interview pause: hook wiring (abort on pause, resume loop) + paused screen UI + i18n + tests | done |
 
 ## Known follow-ups (small, non-blocking)
 
@@ -126,6 +126,24 @@ direction (2026-08-17); first task is voice input (P1-1).
 ## Progress log
 
 <!-- Newest first. Format: YYYY-MM-DD · TASK-ID · what changed · notes for next session -->
+
+- 2026-08-17 · P2-8-2 · feat(interview): interview pause UI + hook wiring
+  (PLAN-V2 §10, completes P2-8). `useInterview` gained `pause()` (aborts the
+  in-flight turn via the existing `abortRef`, clears busy/streaming/error,
+  commits the paused session — the discarded stream was never committed so
+  the transcript loses nothing) and `resume()` (paused → running with a fresh
+  checkpoint; re-runs `runPanelTurn()` only when the last committed turn is
+  not a panelist question awaiting an answer). Recovery: a stored `paused`
+  session hydrates paused — no auto-resume, no checkpoint reset, so the clock
+  cannot drift. The interview screen shows a "Jeda" button beside the timer
+  and end-early control (end-early disabled while paused — resume first);
+  the paused state replaces the chat area with a "Sesi dijeda" card (frozen
+  remaining time, transcript not rendered) and a "Lanjutkan" button; the
+  composer and voice mic are force-stopped/hidden while paused. i18n:
+  `pausedBody` + `pausedTimerNote` (id+en; the `pausedTitle`/`pause`/`resume`
+  keys already existed). The hook test mock now rejects on signal abort like
+  the real `streamComplete`. New tests: hook (4) + screen pause/resume
+  integration (1; `pnpm test` 334 pass). Gates: lint, typecheck, test, build.
 
 - 2026-08-17 · P2-8-1 · feat(panel): interview pause groundwork (PLAN-V2 §10,
   backend-independent half). `'paused'` added to `InterviewStatus`; engine

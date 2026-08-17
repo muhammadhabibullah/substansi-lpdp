@@ -305,6 +305,16 @@ function ariaButton(label: string): HTMLButtonElement | null {
   );
 }
 
+/** Buttons with visible text (e.g. the pause/resume controls). */
+function textButton(label: string): HTMLButtonElement | null {
+  const buttons = Array.from(container?.querySelectorAll('button') ?? []);
+  return (
+    (buttons.find((button) => button.textContent?.trim() === label) as
+      | HTMLButtonElement
+      | undefined) ?? null
+  );
+}
+
 async function click(element: HTMLElement): Promise<void> {
   await React.act(async () => {
     element.click();
@@ -526,4 +536,40 @@ describe('interview screen ↔ use-interview ↔ llm wiring', () => {
     const panelistTurns = stored.turns?.filter((turn) => turn.speaker !== 'user') ?? [];
     expect(panelistTurns.at(-1)?.text).toBe(full);
   }, 20_000);
+
+  it('pauses the interview, hides the transcript, and resumes where it left off', async () => {
+    pushPanelistTurn('Halo Budi, silakan perkenalkan diri Anda.');
+
+    await renderScreen();
+    await waitFor(
+      () => screenText().includes('silakan perkenalkan diri Anda'),
+      'the opening question',
+    );
+
+    // Pause: the paused panel replaces the chat area, transcript hidden.
+    await click(textButton('Jeda')!);
+    expect(screenText()).toContain('Sesi dijeda');
+    expect(screenText()).not.toContain('silakan perkenalkan diri Anda');
+
+    // The paused status is persisted so a reload stays paused.
+    const stored = JSON.parse(
+      window.localStorage.getItem(STORAGE_KEYS.session) ?? '{}',
+    ) as { status?: string };
+    expect(stored.status).toBe('paused');
+
+    // Resume: the pending panelist question reappears and the panel does not
+    // regenerate it (no extra stream request went out).
+    const streamsBefore = requestBodies.filter((body) => body.stream === true).length;
+    await click(textButton('Lanjutkan')!);
+    await waitFor(
+      () => screenText().includes('silakan perkenalkan diri Anda'),
+      'the transcript restored after resume',
+    );
+    expect(requestBodies.filter((body) => body.stream === true).length).toBe(streamsBefore);
+
+    const after = JSON.parse(
+      window.localStorage.getItem(STORAGE_KEYS.session) ?? '{}',
+    ) as { status?: string };
+    expect(after.status).toBe('running');
+  }, 15_000);
 });

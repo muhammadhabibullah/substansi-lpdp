@@ -15,8 +15,10 @@ import {
   evaluatePhase,
   followCandidateLanguage,
   lastPanelistQuestion,
+  pauseSession,
   planPanelistTurn,
   questionsInPhase,
+  resumePausedSession,
   resumeSession,
   tickClock,
 } from '@/lib/panel/engine';
@@ -73,6 +75,8 @@ export interface UseInterviewResult {
   submitAnswer: (text: string) => void;
   retry: () => void;
   skipTurn: () => void;
+  pause: () => void;
+  resume: () => void;
   endEarly: () => void;
   dismissWarning: () => void;
   reset: () => void;
@@ -134,6 +138,12 @@ export function useInterview(options: UseInterviewOptions): UseInterviewResult {
       sessionRef.current = resumed;
       setSession(resumed);
       setRecovered(true);
+    } else if (stored && stored.status === 'paused') {
+      // A paused session stays paused across reloads (PLAN-V2 §10): no
+      // auto-resume, and no checkpoint reset, so the clock cannot drift.
+      // The paused panel on the interview screen carries the messaging.
+      sessionRef.current = stored;
+      setSession(stored);
     } else if (stored) {
       sessionRef.current = stored;
       setSession(stored);
@@ -401,6 +411,44 @@ export function useInterview(options: UseInterviewOptions): UseInterviewResult {
     void runPanelTurn();
   }, [commit, runPanelTurn]);
 
+  /**
+   * Pause the interview (PLAN-V2 §10): abort the in-flight turn and persist
+   * the paused session. The discarded stream was never committed, so nothing
+   * is lost from the transcript; the clock freezes while paused.
+   */
+  const pause = React.useCallback(() => {
+    const current = sessionRef.current;
+    if (!current) return;
+    if (current.status !== 'running' && current.status !== 'wrapping') return;
+    abortRef.current?.abort();
+    busyRef.current = false;
+    setBusy(false);
+    setStreaming(null);
+    setError(null);
+
+    const ticked = tickClock(current);
+    commit(pauseSession(ticked));
+  }, [commit]);
+
+  /**
+   * Resume a paused session. If the last committed turn is not a panelist
+   * question awaiting an answer (e.g. the pause aborted one mid-stream), the
+   * moderator regenerates the turn.
+   */
+  const resume = React.useCallback(() => {
+    const current = sessionRef.current;
+    if (!current || current.status !== 'paused') return;
+    const resumed = resumePausedSession(current);
+    commit(resumed);
+
+    const lastTurn = resumed.turns[resumed.turns.length - 1];
+    const awaitingAnswer =
+      lastTurn !== undefined && lastTurn.speaker !== 'user' && lastTurn.speaker !== 'system';
+    if (!awaitingAnswer) {
+      void runPanelTurn();
+    }
+  }, [commit, runPanelTurn]);
+
   const endEarly = React.useCallback(() => {
     const current = sessionRef.current;
     if (!current) return;
@@ -446,6 +494,8 @@ export function useInterview(options: UseInterviewOptions): UseInterviewResult {
     submitAnswer,
     retry,
     skipTurn,
+    pause,
+    resume,
     endEarly,
     dismissWarning,
     reset,
