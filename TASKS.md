@@ -109,6 +109,7 @@ direction (2026-08-17); first task is voice input (P1-1).
 | P2-7-2 | README v2 (hosted + self-host/BYOK), CONTRIBUTING, env docs | todo |
 | P2-8-1 | Interview pause: engine + storage `paused` status, schema bump, pause/resume helpers + tests | done |
 | P2-8-2 | Interview pause: hook wiring (abort on pause, resume loop) + paused screen UI + i18n + tests | done |
+| P2-8-3 | Interview session delete: discard a paused/ongoing session from the interview screen (confirm dialog) + paused sessions surfaced in the setup/landing resume warnings | done |
 
 ## Known follow-ups (small, non-blocking)
 
@@ -126,6 +127,21 @@ direction (2026-08-17); first task is voice input (P1-1).
 ## Progress log
 
 <!-- Newest first. Format: YYYY-MM-DD · TASK-ID · what changed · notes for next session -->
+
+- 2026-08-18 · P2-8-3 · feat(interview): delete a paused/ongoing session.
+  Entry points on the interview screen: a labeled "Hapus sesi" button on the
+  paused panel beside "Lanjutkan", and an icon-only trash button in the sticky
+  status bar while running/wrapping. Both open a destructive confirm dialog
+  (same pattern as the end-early dialog); confirming runs `interview.reset()`
+  (aborts any in-flight turn, clears `substansi-lpdp:session`, no report is
+  produced) and `router.push('/setup')` since the screen has no session left
+  to render. `isResumable` now includes `paused`, so the setup page's
+  existing-session warning (resume/discard) and the landing "Lanjutkan sesi"
+  CTA also cover paused sessions. i18n: `deleteSession` + confirm trio
+  (id+en). The screen test harness now wraps the screen in `AppRouterContext`
+  with a spy router. New tests: screen paused-delete (incl. cancel keeps the
+  session) + ongoing delete via status bar (2), storage `isResumable` (2;
+  `pnpm test` 338 pass). Gates: lint, typecheck, test, build.
 
 - 2026-08-17 · P2-8-2 · feat(interview): interview pause UI + hook wiring
   (PLAN-V2 §10, completes P2-8). `useInterview` gained `pause()` (aborts the

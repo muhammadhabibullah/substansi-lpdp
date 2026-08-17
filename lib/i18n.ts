@@ -328,6 +328,11 @@ const id = {
     pausedTimerNote: 'Waktu tidak berjalan selama dijeda — tersisa {time}.',
     pause: 'Jeda',
     resume: 'Lanjutkan',
+    deleteSession: 'Hapus sesi',
+    deleteSessionConfirmTitle: 'Hapus sesi wawancara ini?',
+    deleteSessionConfirmBody:
+      'Semua jawaban dan progres sesi ini akan dihapus permanen tanpa laporan penilaian. Tindakan ini tidak bisa dibatalkan.',
+    deleteSessionConfirm: 'Ya, hapus sesi',
     languageSwitchNotice: 'Pewawancara beralih ke bahasa Inggris.',
     languageSwitchBackNotice: 'Pewawancara kembali ke Bahasa Indonesia.',
     errorTitle: 'Gagal menghubungi model',
@@ -966,6 +971,11 @@ const en: Copy = {
     pausedTimerNote: 'Time does not run while paused — {time} remaining.',
     pause: 'Pause',
     resume: 'Resume',
+    deleteSession: 'Delete session',
+    deleteSessionConfirmTitle: 'Delete this interview session?',
+    deleteSessionConfirmBody:
+      'All answers and progress from this session will be permanently deleted without an assessment report. This cannot be undone.',
+    deleteSessionConfirm: 'Yes, delete session',
     languageSwitchNotice: 'The panelist switched to English.',
     languageSwitchBackNotice: 'The panelist switched back to Bahasa Indonesia.',
     errorTitle: 'Could not reach the model',

@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   AlertTriangle,
   Clock,
@@ -37,6 +38,7 @@ import { combineTranscript, recognitionLang } from '@/lib/voice';
 
 export function InterviewScreen() {
   const { c, f } = useI18n();
+  const router = useRouter();
   const { settings, configured, hydrated: settingsReady } = useSettings();
   const { profile, hydrated: profileReady } = useProfile();
   const { documents, hydrated: docsReady } = useDocuments();
@@ -50,6 +52,7 @@ export function InterviewScreen() {
 
   const [draft, setDraft] = React.useState('');
   const [confirmEnd, setConfirmEnd] = React.useState(false);
+  const [confirmDelete, setConfirmDelete] = React.useState(false);
   const scrollRef = React.useRef<HTMLDivElement>(null);
 
   const { session, busy, streaming, error, warning } = interview;
@@ -89,6 +92,15 @@ export function InterviewScreen() {
   const startNew = () => {
     interview.reset();
     interview.start();
+  };
+
+  // Delete a paused/ongoing session (P2-8-3): reset() aborts any in-flight
+  // turn and clears the stored session; the candidate returns to setup
+  // because the screen has no session to render afterwards.
+  const deleteSession = () => {
+    setConfirmDelete(false);
+    interview.reset();
+    router.push('/setup');
   };
 
   // Never keep the microphone open while the panel is speaking/working, or
@@ -218,6 +230,16 @@ export function InterviewScreen() {
               <Square aria-hidden />
               {c.interview.endEarly}
             </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setConfirmDelete(true)}
+              aria-label={c.interview.deleteSession}
+              title={c.interview.deleteSession}
+            >
+              <Trash2 aria-hidden />
+              <span className="sr-only">{c.interview.deleteSession}</span>
+            </Button>
           </div>
         </div>
 
@@ -267,10 +289,16 @@ export function InterviewScreen() {
                 time: formatClock(interview.remainingMs),
               })}
             </p>
-            <Button onClick={interview.resume}>
-              <Play aria-hidden />
-              {c.interview.resume}
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button onClick={interview.resume}>
+                <Play aria-hidden />
+                {c.interview.resume}
+              </Button>
+              <Button variant="outline" onClick={() => setConfirmDelete(true)}>
+                <Trash2 aria-hidden />
+                {c.interview.deleteSession}
+              </Button>
+            </div>
           </CardContent>
         </Card>
       ) : (
@@ -393,6 +421,38 @@ export function InterviewScreen() {
                   }}
                 >
                   {c.interview.endEarlyConfirm}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      ) : null}
+
+      {/* Delete-session confirmation (P2-8-3) */}
+      {confirmDelete ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-title"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+        >
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle id="delete-title">
+                {c.interview.deleteSessionConfirmTitle}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                {c.interview.deleteSessionConfirmBody}
+              </p>
+              <div className="flex flex-wrap justify-end gap-2">
+                <Button variant="outline" onClick={() => setConfirmDelete(false)}>
+                  {c.common.cancel}
+                </Button>
+                <Button variant="destructive" onClick={deleteSession}>
+                  <Trash2 aria-hidden />
+                  {c.interview.deleteSessionConfirm}
                 </Button>
               </div>
             </CardContent>

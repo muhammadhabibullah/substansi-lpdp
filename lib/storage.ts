@@ -246,10 +246,18 @@ export function clearSession(): void {
   removeKey(STORAGE_KEYS.session);
 }
 
-/** A session worth offering to resume. */
+/**
+ * A session worth offering to resume. Paused sessions count too (P2-8-3):
+ * the interview page shows the paused panel, and the setup warning offers
+ * both resuming and discarding it.
+ */
 export function isResumable(session: InterviewSession | null): boolean {
   if (!session) return false;
-  return session.status === 'running' || session.status === 'wrapping';
+  return (
+    session.status === 'running' ||
+    session.status === 'wrapping' ||
+    session.status === 'paused'
+  );
 }
 
 /* ── Reports — one entry per interview attempt, newest first ─────────────── */

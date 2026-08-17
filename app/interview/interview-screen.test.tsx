@@ -17,11 +17,14 @@
  *     the WhatsApp-style recording bar (no live text), finished into the
  *     editable review state, corrected, and submitted into the next turn;
  *  3. truncation-retry buffer: `onTruncationRetry` (lib/llm) resets the
- *     screen's live streaming buffer before the regenerated turn renders.
+ *     screen's live streaming buffer before the regenerated turn renders;
+ *  4. session delete (P2-8-3): the confirm dialog discards a paused or
+ *     ongoing session from storage and routes back to /setup.
  */
 
 import * as React from 'react';
 import { createRoot, type Root } from 'react-dom/client';
+import { AppRouterContext, type AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { I18nProvider } from '@/components/i18n-provider';
@@ -201,6 +204,7 @@ beforeEach(() => {
   moderatorQueue.length = 0;
   panelistQueue.length = 0;
   requestBodies.length = 0;
+  routerPush = vi.fn();
 
   saveSettings(SETTINGS);
   saveProfile(PROFILE);
@@ -245,6 +249,19 @@ beforeEach(() => {
 
 let root: Root | null = null;
 let container: HTMLElement | null = null;
+/** Router spy provided to the screen via `AppRouterContext` (P2-8-3). */
+let routerPush: ReturnType<typeof vi.fn> = vi.fn();
+
+function makeRouter(): AppRouterInstance {
+  return {
+    back: vi.fn(),
+    forward: vi.fn(),
+    push: routerPush,
+    replace: vi.fn(),
+    prefetch: vi.fn(),
+    refresh: vi.fn(),
+  };
+}
 
 async function renderScreen(): Promise<HTMLElement> {
   container = document.createElement('div');
@@ -253,7 +270,9 @@ async function renderScreen(): Promise<HTMLElement> {
   await React.act(async () => {
     root!.render(
       <I18nProvider>
-        <InterviewScreen />
+        <AppRouterContext.Provider value={makeRouter()}>
+          <InterviewScreen />
+        </AppRouterContext.Provider>
       </I18nProvider>,
     );
   });
@@ -571,5 +590,53 @@ describe('interview screen ↔ use-interview ↔ llm wiring', () => {
       window.localStorage.getItem(STORAGE_KEYS.session) ?? '{}',
     ) as { status?: string };
     expect(after.status).toBe('running');
+  }, 15_000);
+
+  it('deletes a paused session after confirmation, keeping it on cancel', async () => {
+    pushPanelistTurn('Halo Budi, silakan perkenalkan diri Anda.');
+
+    await renderScreen();
+    await waitFor(
+      () => screenText().includes('silakan perkenalkan diri Anda'),
+      'the opening question',
+    );
+
+    // Pause first so the delete entry point is the paused panel button.
+    await click(textButton('Jeda')!);
+    await waitFor(() => screenText().includes('Sesi dijeda'), 'the paused panel');
+
+    // Open the dialog, then cancel: the stored session survives untouched.
+    await click(textButton('Hapus sesi')!);
+    expect(screenText()).toContain('Hapus sesi wawancara ini?');
+    await click(textButton('Batal')!);
+    expect(window.localStorage.getItem(STORAGE_KEYS.session)).not.toBeNull();
+    expect(routerPush).not.toHaveBeenCalled();
+
+    // Confirming discards the session and routes back to setup.
+    await click(textButton('Hapus sesi')!);
+    await click(textButton('Ya, hapus sesi')!);
+    expect(window.localStorage.getItem(STORAGE_KEYS.session)).toBeNull();
+    expect(routerPush).toHaveBeenCalledWith('/setup');
+  }, 15_000);
+
+  it('deletes an ongoing session from the status bar', async () => {
+    pushPanelistTurn('Halo Budi, silakan perkenalkan diri Anda.');
+
+    await renderScreen();
+    await waitFor(
+      () => screenText().includes('silakan perkenalkan diri Anda'),
+      'the opening question',
+    );
+
+    // The icon-only trash control sits in the sticky status bar while running.
+    await click(ariaButton('Hapus sesi')!);
+    await waitFor(
+      () => screenText().includes('Hapus sesi wawancara ini?'),
+      'the delete confirmation dialog',
+    );
+    await click(textButton('Ya, hapus sesi')!);
+
+    expect(window.localStorage.getItem(STORAGE_KEYS.session)).toBeNull();
+    expect(routerPush).toHaveBeenCalledWith('/setup');
   }, 15_000);
 });

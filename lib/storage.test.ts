@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
   deleteReport,
+  isResumable,
   loadReport,
   loadReports,
   loadSession,
@@ -209,6 +210,28 @@ describe('session storage (pause support, P2-8)', () => {
       JSON.stringify({ ...session, turns: 'not-an-array' }),
     );
     expect(loadSession()).toBeNull();
+  });
+});
+
+describe('isResumable (P2-8-3)', () => {
+  function sessionWithStatus(status: InterviewSession['status']): InterviewSession {
+    return {
+      ...createSession({ profile: EMPTY_PROFILE, model: 'test-model', locale: 'id' }),
+      status,
+    };
+  }
+
+  it('offers live and paused sessions for resume', () => {
+    expect(isResumable(sessionWithStatus('running'))).toBe(true);
+    expect(isResumable(sessionWithStatus('wrapping'))).toBe(true);
+    expect(isResumable(sessionWithStatus('paused'))).toBe(true);
+  });
+
+  it('does not offer terminal or pre-start sessions', () => {
+    expect(isResumable(sessionWithStatus('finished'))).toBe(false);
+    expect(isResumable(sessionWithStatus('aborted'))).toBe(false);
+    expect(isResumable(sessionWithStatus('preparing'))).toBe(false);
+    expect(isResumable(null)).toBe(false);
   });
 });
 
