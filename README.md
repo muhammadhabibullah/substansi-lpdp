@@ -147,7 +147,8 @@ lib/
     engine.ts    # helper murni: sesi, jam, konteks
 ```
 
-Detail lengkap ada di [`PLAN.md`](./PLAN.md); backlog di [`TASKS.md`](./TASKS.md);
+Detail lengkap ada di [`PLAN.md`](./PLAN.md); rencana model hasil post-training
+di [`MODEL_PLAN.md`](./MODEL_PLAN.md); backlog di [`TASKS.md`](./TASKS.md);
 panduan kontributor di [`CONTRIBUTING.md`](./CONTRIBUTING.md) dan
 [`AGENTS.md`](./AGENTS.md).
 

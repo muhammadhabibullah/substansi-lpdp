@@ -114,6 +114,9 @@ One-time **interview credits**: a credit = one interview at that tier, valid
   current model availability/cost on OpenRouter before pinning defaults.
 - The client's existing `ModelTier` (`'main' | 'cheap'`) maps 1:1 onto the
   virtual ids the proxy understands — **zero client logic changes**.
+- A post-trained in-house model (`MODEL_PLAN.md`) would enter this table as one
+  more `MODEL_TIER_MAP` entry, most likely on the free tier. That plan is
+  independent of P2 and changes nothing here until it ships.
 - Paid users can still use the free tier (credit is consumed only when they
   explicitly start an upgraded session); the upgrade picker is shown at setup
   and on the interview start screen.

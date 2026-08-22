@@ -111,6 +111,33 @@ direction (2026-08-17); first task is voice input (P1-1).
 | P2-8-2 | Interview pause: hook wiring (abort on pause, resume loop) + paused screen UI + i18n + tests | done |
 | P2-8-3 | Interview session delete: discard a paused/ongoing session from the interview screen (confirm dialog) + paused sessions surfaced in the setup/landing resume warnings | done |
 
+## MP — Post-trained interview model (per MODEL_PLAN.md — planned, not started)
+
+Independent of P2; MP-6 assumes the `MODEL_TIER_MAP` from P2-3. Ordering is
+deliberate: evals (MP-2) before data, data before training, serving decided only
+once a checkpoint exists to measure.
+
+| ID | Task | Status |
+|---|---|---|
+| MP-1-1 | Spike: zero-shot baseline for 3 candidate base models + `gpt-5-mini` on the MODEL_PLAN §7 suite (needs MP-2) | todo |
+| MP-1-2 | Written determination on teacher-model ToS + base-model license — **blocks MP-3** | todo |
+| MP-2-1 | Export the seven prompt builders under a barrel; add `evals/` + `pnpm eval`; update AGENTS.md directory layout + commands | todo |
+| MP-2-2 | Tier 0 eval: JSON validity/schema via the repo's real parsers, verbatim-quote grounding, behavioral lints (CI-safe, no live key) | todo |
+| MP-2-3 | Gold set: ~150 hand-graded transcripts across four quality strata; calibration metrics (MAE, Spearman, band agreement, stability) | todo |
+| MP-2-4 | Injection-resistance, fairness and generalization suites; freeze the held-out field list | todo |
+| MP-3-1 | Field taxonomy (~120 leaves, 20% held out) + archetype cards + matrix sampler | todo |
+| MP-3-2 | Synthetic dossier generation (CV + study plan/proposal + essay) with coherence and contradiction control | todo |
+| MP-3-3 | Self-play rollouts through the repo's own prompt builders, incl. ASR-degraded slice | todo |
+| MP-3-4 | Rejection sampling + validators; DPO preference pairs from the failure taxonomy; dedup/decontamination/splits | todo |
+| MP-4-1 | LoRA SFT run + full eval against the MP-1-1 baseline | todo |
+| MP-4-2 | Error analysis → targeted data top-up → re-run | todo |
+| MP-5-1 | Serving spike: measured cost/interview + latency across vLLM / hosted LoRA / local GGUF; decide | todo |
+| MP-5-2 | DPO run + full eval; ship-gate review | todo |
+| MP-6-1 | `MODEL_TIER_MAP` entry + validation-failure fallback to the general model + feature flag (no client changes) | todo |
+| MP-6-2 | Canary on free-tier traffic; Tier 0 + fallback-rate monitoring; rollback runbook | todo |
+| MP-7-1 | Model card (training data, evals, limitations, disclaimer) + README / PLAN-V2 §3 updates | todo |
+| MP-7-2 | GGUF quantized build + self-host instructions for Ollama / LM Studio | todo |
+
 ## Known follow-ups (small, non-blocking)
 
 - README screenshots are not committed yet (M6-1); capture from a real session.
@@ -128,6 +155,16 @@ direction (2026-08-17); first task is voice input (P1-1).
 
 <!-- Newest first. Format: YYYY-MM-DD · TASK-ID · what changed · notes for next session -->
 
+- 2026-08-22 · docs · Added `MODEL_PLAN.md`: plan for `panelis-8b`, a
+  post-trained open-weights model (LoRA SFT → DPO, synthetic data only) covering
+  all seven LLM call families in the app across many academic fields. Key
+  points for the next session: it changes no product spec (PLAN.md §1/§3/§5 stay
+  authoritative) and needs exactly one application-code change — exporting the
+  five module-private prompt builders (`buildModeratorMessages`, notetaker's
+  `buildMessages`, `buildNarrativeMessages`, `buildSignalsMessages`,
+  summarize's `buildMessages`) so data generation and evals import the *real*
+  prompts rather than re-implementing them (MP-2-1). MP milestones added above;
+  cross-links added to README, AGENTS.md ("When unsure") and PLAN-V2 §3.
 - 2026-08-18 · P2-8-3 · feat(interview): delete a paused/ongoing session.
   Entry points on the interview screen: a labeled "Hapus sesi" button on the
   paused panel beside "Lanjutkan", and an icon-only trash button in the sticky

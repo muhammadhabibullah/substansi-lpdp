@@ -95,6 +95,9 @@ pnpm test           # unit tests
 ## When unsure
 
 - Product/architecture question → check `PLAN.md` first.
+- Model, training-data, or evaluation question → `MODEL_PLAN.md`. It plans a
+  post-trained model for the panel; it never redefines personas, phases or
+  rubric weights, which stay owned by `PLAN.md` §1/§3/§5.
 - Ambiguity that PLAN.md doesn't settle → choose the simplest option consistent
   with the hard constraints, note the decision in the `TASKS.md` progress log.
 - Genuinely blocking ambiguity → stop and ask the user rather than guessing big.
